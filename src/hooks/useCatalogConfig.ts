@@ -9,6 +9,8 @@ export interface CatalogProduct {
   category_id: number
   name: string
   main_image: string | null
+  selling_price: string | number
+  mrp: string | number
 }
 
 export interface CatalogCategory {
@@ -16,6 +18,7 @@ export interface CatalogCategory {
   name: string
   parent_id: number | null
   primary_products: CatalogProduct[]
+  secondary_products?: CatalogProduct[]
 }
 
 export interface CatalogConfigResponse {
