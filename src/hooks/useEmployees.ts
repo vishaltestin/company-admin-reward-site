@@ -25,7 +25,7 @@ export const useEmployeesQuery = ({
     queryKey: ["employees", vertical, page, search],
     queryFn: async () => {
       const { data } = await api.get<PaginatedResponse<User>>(
-        "/admin/employees",
+        "/employees",
         {
           params: {
             vertical,

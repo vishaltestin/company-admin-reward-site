@@ -2,8 +2,15 @@ import { useState, useMemo } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthStore, type User } from "@/store/useAuthStore"
 import { useVerticalsQuery } from "@/hooks/useVerticals"
+
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Plus, Users, Loader2 } from "lucide-react"
 
 import { EmployeeTable } from "@/components/admin/EmployeeTable"
@@ -17,18 +24,23 @@ export default function EmployeesPage() {
   const { data: dbVerticals, isLoading: isLoadingVerticals } =
     useVerticalsQuery()
 
+  // Modal States
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isBulkOpen, setIsBulkOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+
+  // Tab State
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
-  const [isBulkOpen, setIsBulkOpen] = useState<boolean>(false)
 
   const availableTabs = useMemo(() => {
     if (!user || !dbVerticals) return []
 
+    // Because of our backend fix, dbVerticals is now ALREADY scoped to the company!
     if (["business_head", "super_admin"].includes(user.user_type)) {
       return dbVerticals
     }
 
+    // Sub-admins only see tabs they are explicitly assigned to manage
     return dbVerticals.filter((vertical) =>
       user.managed_vertical_ids.includes(vertical.id)
     )
@@ -36,6 +48,20 @@ export default function EmployeesPage() {
 
   const currentTab =
     selectedTab || (availableTabs.length > 0 ? availableTabs[0].slug : "")
+  const currentTabName =
+    availableTabs.find((t) => t.slug === currentTab)?.name || ""
+
+  // Handlers for closing modals and refreshing data
+  const handleFormClose = () => {
+    setIsFormOpen(false)
+    setTimeout(() => setEditingUser(null), 200) // Clear state after exit animation
+  }
+
+  const handleSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["employees"] })
+    handleFormClose()
+    setIsBulkOpen(false)
+  }
 
   if (isLoadingVerticals) {
     return (
@@ -60,6 +86,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header section */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -84,12 +111,12 @@ export default function EmployeesPage() {
               setIsFormOpen(true)
             }}
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Recipient
+            <Plus className="mr-2 h-4 w-4" /> Add Recipient
           </Button>
         </div>
       </div>
 
+      {/* Tabs section */}
       <Tabs
         value={currentTab}
         onValueChange={setSelectedTab}
@@ -127,62 +154,45 @@ export default function EmployeesPage() {
         ))}
       </Tabs>
 
-      {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                {editingUser
-                  ? `Edit ${editingUser.first_name}`
-                  : "Add New Recipient"}
-              </h2>
-              <p className="text-sm text-gray-500">
-                Vertical:{" "}
-                <span className="font-semibold capitalize">
-                  {currentTab.replace("_", " ")}
-                </span>
-              </p>
-            </div>
+      {/* Shadcn Modal: Single Recipient Form */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingUser
+                ? `Edit ${editingUser.first_name}`
+                : "Add New Recipient"}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Vertical: <span className="font-semibold">{currentTabName}</span>
+            </p>
+          </DialogHeader>
+          <RewardeeForm
+            verticalSlug={currentTab}
+            initialData={editingUser}
+            onSuccess={handleSuccess}
+            onCancel={handleFormClose}
+          />
+        </DialogContent>
+      </Dialog>
 
-            <RewardeeForm
-              verticalSlug={currentTab}
-              initialData={editingUser}
-              onSuccess={() => {
-                setIsFormOpen(false)
-                queryClient.invalidateQueries({ queryKey: ["employees"] })
-              }}
-              onCancel={() => setIsFormOpen(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {isBulkOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Bulk Upload</h2>
-                <p className="text-sm text-gray-500">
-                  Importing to:{" "}
-                  <span className="font-semibold text-gray-700 capitalize">
-                    {currentTab.replace(/_/g, " ")}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <BulkUpload
-              verticalSlug={currentTab}
-              onSuccess={() => {
-                setIsBulkOpen(false)
-                queryClient.invalidateQueries({ queryKey: ["employees"] })
-              }}
-              onCancel={() => setIsBulkOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+      {/* Shadcn Modal: Bulk Upload */}
+      <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk Upload</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Importing to:{" "}
+              <span className="font-semibold">{currentTabName}</span>
+            </p>
+          </DialogHeader>
+          <BulkUpload
+            verticalSlug={currentTab}
+            onSuccess={handleSuccess}
+            onCancel={() => setIsBulkOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

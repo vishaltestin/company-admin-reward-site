@@ -5,6 +5,8 @@ import Login from "@/pages/Login"
 import Dashboard from "@/pages/Dashboard"
 import SystemAdminsPage from "@/pages/SystemAdmins"
 import EmployeesPage from "@/pages/Employees"
+import SettingsPage from "@/pages/Settings"
+import StorefrontPage from "@/pages/Storefront"
 
 export const router = createBrowserRouter(
   [
@@ -38,21 +40,22 @@ export const router = createBrowserRouter(
       ),
       children: [
         {
-          // Wrap all protected routes with the new Admin Layout
           element: <AdminLayout />,
           children: [
-            {
-              path: "/dashboard",
-              element: <Dashboard />,
-            },
-            {
-              path: "/system-admins",
-              element: <SystemAdminsPage />,
-            },
-            // Future routes go here:
+            { path: "/dashboard", element: <Dashboard /> },
             { path: "/employees", element: <EmployeesPage /> },
-            // { path: "/catalog", element: <Catalog /> },
-            // { path: "/settings", element: <Settings /> },
+            { path: "/settings", element: <SettingsPage /> },
+            {
+              element: (
+                <ProtectedRoute
+                  allowedRoles={["business_head", "super_admin"]}
+                />
+              ),
+              children: [
+                { path: "/system-admins", element: <SystemAdminsPage /> },
+                { path: "/storefront", element: <StorefrontPage /> },
+              ],
+            },
           ],
         },
       ],

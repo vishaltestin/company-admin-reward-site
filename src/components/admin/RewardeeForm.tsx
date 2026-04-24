@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useForm, Controller, type Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useMutation } from "@tanstack/react-query"
@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-// 1. Unified Zod Schema
 const formSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
@@ -64,7 +63,6 @@ export function RewardeeForm({
     },
   })
 
-  // Populate data if editing
   useEffect(() => {
     if (initialData) {
       reset({
@@ -83,12 +81,12 @@ export function RewardeeForm({
 
       if (initialData?.id) {
         const { data } = await api.put(
-          `/admin/employees/${initialData.id}`,
+          `/employees/${initialData.id}`,
           payload
         )
         return data
       } else {
-        const { data } = await api.post("/admin/employees", payload)
+        const { data } = await api.post("/employees", payload)
         return data
       }
     },
@@ -182,15 +180,16 @@ export function RewardeeForm({
                     id={`dynamic_${config.name}`}
                     type={config.type}
                     placeholder={config.placeholder}
-                    // 'any' cast used here strictly because dynamic dot-notation keys are not statically typed in RHF
-                    {...register(`custom_data.${config.name}` as any)}
+                    {...register(
+                      `custom_data.${config.name}` as Path<FormValues>
+                    )}
                   />
                 )}
 
                 {config.type === "select" && (
                   <Controller
                     control={control}
-                    name={`custom_data.${config.name}` as any}
+                    name={`custom_data.${config.name}` as Path<FormValues>}
                     render={({ field: { onChange, value } }) => (
                       <Select onValueChange={onChange} value={value || ""}>
                         <SelectTrigger id={`dynamic_${config.name}`}>

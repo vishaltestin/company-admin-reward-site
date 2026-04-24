@@ -34,7 +34,21 @@ import {
 import { useSidebar } from "@/components/ui/sidebar"
 import { NavUser } from "@/components/auth/NavUser"
 
-const navItems = [
+interface NavSubItem {
+  title: string
+  url: string
+  allowedRoles?: string[]
+}
+
+interface NavItem {
+  title: string
+  icon: React.ElementType
+  url: string
+  allowedRoles?: string[]
+  items?: NavSubItem[]
+}
+
+const navItems: NavItem[] = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
@@ -46,14 +60,8 @@ const navItems = [
     icon: Camera,
     url: "#",
     items: [
-      {
-        title: "Start New Campaign",
-        url: "/create-new-campaign",
-      },
-      {
-        title: "View Campaign",
-        url: "/campaign-list",
-      },
+      { title: "Start New Campaign", url: "/create-new-campaign" },
+      { title: "View Campaign", url: "/campaign-list" },
     ],
   },
   {
@@ -64,6 +72,7 @@ const navItems = [
       {
         title: "Admin List",
         url: "/system-admins",
+        allowedRoles: ["business_head", "super_admin"],
       },
       {
         title: "Employees",
@@ -75,37 +84,23 @@ const navItems = [
     title: "Storefront",
     icon: ShoppingCart,
     url: "#",
-    items: [
-      {
-        title: "Edit Storefront",
-        url: "/storefront",
-      },
-    ],
+    allowedRoles: ["business_head", "super_admin"],
+    items: [{ title: "Edit Storefront", url: "/storefront" }],
   },
   {
     title: "Reports",
     icon: BarChart2,
     url: "#",
-    items: [
-      {
-        title: "Reports Overview",
-        url: "/reports",
-      },
-    ],
+    items: [{ title: "Reports Overview", url: "/reports" }],
   },
   {
     title: "Payment",
     icon: DollarSign,
     url: "#",
+    allowedRoles: ["business_head", "super_admin"],
     items: [
-      {
-        title: "View Balance",
-        url: "/payment",
-      },
-      {
-        title: "Transaction History",
-        url: "/transaction-history",
-      },
+      { title: "View Balance", url: "/payment" },
+      { title: "Transaction History", url: "/transaction-history" },
     ],
   },
 ]
@@ -124,9 +119,9 @@ export function AppSidebar() {
           {open ? (
             <div className="flex items-center gap-3">
               <img
-                src={`${user.company?.logo_url}`}
-                height={200}
-                className="max-h-25 max-w-full"
+                src={user.company?.logo_url || ""}
+                alt="Company Logo"
+                className="max-h-12 max-w-full object-contain"
               />
             </div>
           ) : (
@@ -139,66 +134,86 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2 py-4">
         <SidebarMenu>
-          {navItems.map((item) => {
-            const hasItems = item.items && item.items.length > 0
-            const isActive =
-              location.pathname.startsWith(item.url) && item.url !== "#"
-
-            if (hasItems) {
-              return (
-                <Collapsible
-                  key={item.title}
-                  asChild
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton
-                        tooltip={item.title}
-                        className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10"
-                      >
-                        <div className="relative">
-                          <div className="absolute top-1/2 -left-2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-opacity group-data-[state=open]/collapsible:opacity-100" />
-                          <item.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <span>{item.title}</span>
-                        <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.items.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild>
-                              <Link to={subItem.url}>
-                                <span>{subItem.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              )
-            }
-
-            return (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive}
-                  tooltip={item.title}
-                  className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10"
-                >
-                  <Link to={item.url}>
-                    <item.icon className="h-5 w-5 text-primary" />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+          {navItems
+            .filter(
+              (item) =>
+                !item.allowedRoles || item.allowedRoles.includes(user.user_type)
             )
-          })}
+            .map((item) => {
+              const visibleSubItems =
+                item.items?.filter(
+                  (sub) =>
+                    !sub.allowedRoles ||
+                    sub.allowedRoles.includes(user.user_type)
+                ) || []
+
+              if (
+                item.items &&
+                item.items.length > 0 &&
+                visibleSubItems.length === 0
+              ) {
+                return null
+              }
+
+              const hasItems = visibleSubItems.length > 0
+              const isActive =
+                location.pathname.startsWith(item.url) && item.url !== "#"
+
+              if (hasItems) {
+                return (
+                  <Collapsible
+                    key={item.title}
+                    asChild
+                    className="group/collapsible"
+                  >
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton
+                          tooltip={item.title}
+                          className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10"
+                        >
+                          <div className="relative">
+                            <div className="absolute top-1/2 -left-2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-opacity group-data-[state=open]/collapsible:opacity-100" />
+                            <item.icon className="h-5 w-5 text-primary" />
+                          </div>
+                          <span>{item.title}</span>
+                          <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {visibleSubItems.map((subItem) => (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton asChild>
+                                <Link to={subItem.url}>
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                )
+              }
+
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    tooltip={item.title}
+                    className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10"
+                  >
+                    <Link to={item.url}>
+                      <item.icon className="h-5 w-5 text-primary" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
         </SidebarMenu>
       </SidebarContent>
 

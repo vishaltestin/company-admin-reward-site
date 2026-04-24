@@ -1,17 +1,11 @@
 import { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { ShieldCheck, Plus, Edit, Loader2 } from "lucide-react"
 
 import { type User } from "@/store/useAuthStore"
-import { useSubAdminsQuery, useSubAdminMutations } from "@/hooks/useSubAdmins"
-import { useVerticalsQuery } from "@/hooks/useVerticals"
+import { useSubAdminsQuery } from "@/hooks/useSubAdmins"
+import { SubAdminForm } from "@/components/admin/SubAdminForm"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -21,72 +15,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
-const formSchema = z.object({
-  first_name: z.string().min(1, "First name is required"),
-  last_name: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email"),
-  mobile: z.string().optional(),
-  managed_vertical_ids: z
-    .array(z.number())
-    .min(1, "Select at least one vertical"),
-})
-
-type FormValues = z.infer<typeof formSchema>
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function SystemAdminsPage() {
   const { data: subAdmins, isLoading } = useSubAdminsQuery()
-  const { data: verticals } = useVerticalsQuery()
-  const { saveMutation } = useSubAdminMutations()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingAdmin, setEditingAdmin] = useState<User | null>(null)
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      first_name: "",
-      last_name: "",
-      email: "",
-      mobile: "",
-      managed_vertical_ids: [],
-    },
-  })
-
-  const openForm = (admin?: User) => {
-    if (admin) {
-      setEditingAdmin(admin)
-      form.reset({
-        first_name: admin.first_name,
-        last_name: admin.last_name,
-        email: admin.email,
-        mobile: admin.mobile || "",
-        // Extract the array of IDs from the nested objects
-        managed_vertical_ids:
-          admin.managed_verticals?.map((v: any) => v.id) || [],
-      })
-    } else {
-      setEditingAdmin(null)
-      form.reset({
-        first_name: "",
-        last_name: "",
-        email: "",
-        mobile: "",
-        managed_vertical_ids: [],
-      })
-    }
+  const openForm = (admin: User | null = null) => {
+    setEditingAdmin(admin)
     setIsFormOpen(true)
   }
 
-  const onSubmit = (values: FormValues) => {
-    saveMutation.mutate(
-      { id: editingAdmin?.id, data: values },
-      { onSuccess: () => setIsFormOpen(false) }
-    )
+  const closeForm = () => {
+    setIsFormOpen(false)
+    setTimeout(() => setEditingAdmin(null), 200)
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -96,7 +50,7 @@ export default function SystemAdminsPage() {
             Manage sub-admins and their vertical access.
           </p>
         </div>
-        <Button onClick={() => openForm()}>
+        <Button onClick={() => openForm(null)}>
           <Plus className="mr-2 h-4 w-4" /> Add Sub-Admin
         </Button>
       </div>
@@ -139,7 +93,7 @@ export default function SystemAdminsPage() {
                   <TableCell>{admin.email}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {admin.managed_verticals?.map((v: any) => (
+                      {admin.managed_verticals?.map((v) => (
                         <Badge
                           key={v.id}
                           variant="secondary"
@@ -166,115 +120,21 @@ export default function SystemAdminsPage() {
         </Table>
       </div>
 
-      {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="mb-6 text-xl font-bold">
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-150">
+          <DialogHeader>
+            <DialogTitle>
               {editingAdmin ? "Edit Sub-Admin" : "Create Sub-Admin"}
-            </h2>
+            </DialogTitle>
+          </DialogHeader>
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>First Name</Label>
-                  <Input {...form.register("first_name")} />
-                  {form.formState.errors.first_name && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.first_name.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Last Name</Label>
-                  <Input {...form.register("last_name")} />
-                  {form.formState.errors.last_name && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.last_name.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  disabled={!!editingAdmin}
-                  {...form.register("email")}
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-3 border-t pt-4">
-                <Label className="text-base font-semibold">
-                  Assign Vertical Access
-                </Label>
-                <p className="mb-2 text-sm text-gray-500">
-                  Select which data verticals this admin can manage.
-                </p>
-
-                <Controller
-                  name="managed_vertical_ids"
-                  control={form.control}
-                  render={({ field }) => (
-                    <div className="grid grid-cols-1 gap-3 rounded-lg border bg-gray-50 p-4 sm:grid-cols-2">
-                      {verticals?.map((vertical) => (
-                        <div
-                          key={vertical.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <Checkbox
-                            id={`vertical-${vertical.id}`}
-                            checked={field.value?.includes(vertical.id)}
-                            onCheckedChange={(checked) => {
-                              const current = field.value || []
-                              const updated = checked
-                                ? [...current, vertical.id]
-                                : current.filter((id) => id !== vertical.id)
-                              field.onChange(updated)
-                            }}
-                          />
-                          <Label
-                            htmlFor={`vertical-${vertical.id}`}
-                            className="cursor-pointer font-normal"
-                          >
-                            {vertical.name}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                />
-                {form.formState.errors.managed_vertical_ids && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.managed_vertical_ids.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsFormOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saveMutation.isPending}>
-                  {saveMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}{" "}
-                  Save Admin
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+          <SubAdminForm
+            initialData={editingAdmin}
+            onSuccess={closeForm}
+            onCancel={closeForm}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import axios from "axios"
 import Cookies from "js-cookie"
+import { useAuthStore } from "@/store/useAuthStore"
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"
 
@@ -18,7 +19,6 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-
 api.interceptors.request.use((config) => {
   const token = Cookies.get("XSRF-TOKEN")
   if (token) {
@@ -26,3 +26,16 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 419) {
+      useAuthStore.getState().clearUser()
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login"
+      }
+    }
+    return Promise.reject(error)
+  }
+)

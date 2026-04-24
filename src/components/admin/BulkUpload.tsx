@@ -79,7 +79,7 @@ export function BulkUpload({
       formData.append("vertical_slug", verticalSlug)
 
       const { data } = await api.post(
-        "/admin/employees/bulk-upload",
+        "/employees/bulk-upload",
         formData,
         {
           headers: {
