@@ -7,6 +7,8 @@ import SystemAdminsPage from "@/pages/SystemAdmins"
 import EmployeesPage from "@/pages/Employees"
 import SettingsPage from "@/pages/Settings"
 import StorefrontPage from "@/pages/Storefront"
+import EmailTemplatesPage from "@/pages/EmailTemplatesPage"
+import TemplateEditor from "@/components/features/email-templates/TemplateEditor"
 
 export const router = createBrowserRouter(
   [
@@ -43,17 +45,22 @@ export const router = createBrowserRouter(
           element: <AdminLayout />,
           children: [
             { path: "/dashboard", element: <Dashboard /> },
-            { path: "/employees", element: <EmployeesPage /> },
-            { path: "/settings", element: <SettingsPage /> },
             {
               element: (
                 <ProtectedRoute
-                  allowedRoles={["business_head", "super_admin"]}
+                  allowedRoles={["business_head", "sub_admin"]}
                 />
               ),
               children: [
                 { path: "/system-admins", element: <SystemAdminsPage /> },
                 { path: "/storefront", element: <StorefrontPage /> },
+                { path: "/employees", element: <EmployeesPage /> },
+                { path: "/settings", element: <SettingsPage /> },
+                { path: "/email-templates", element: <EmailTemplatesPage /> },
+                {
+                  path: "/email-templates/editor/:id",
+                  element: <TemplateEditor />,
+                },
               ],
             },
           ],

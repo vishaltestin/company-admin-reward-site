@@ -9,6 +9,7 @@ import {
   BarChart2,
   DollarSign,
   Camera,
+  BookAIcon,
 } from "lucide-react"
 
 import {
@@ -72,7 +73,7 @@ const navItems: NavItem[] = [
       {
         title: "Admin List",
         url: "/system-admins",
-        allowedRoles: ["business_head", "super_admin"],
+        allowedRoles: ["business_head", "sub_admin"],
       },
       {
         title: "Employees",
@@ -84,7 +85,7 @@ const navItems: NavItem[] = [
     title: "Storefront",
     icon: ShoppingCart,
     url: "#",
-    allowedRoles: ["business_head", "super_admin"],
+    allowedRoles: ["business_head", "sub_admin"],
     items: [{ title: "Edit Storefront", url: "/storefront" }],
   },
   {
@@ -97,10 +98,20 @@ const navItems: NavItem[] = [
     title: "Payment",
     icon: DollarSign,
     url: "#",
-    allowedRoles: ["business_head", "super_admin"],
+    allowedRoles: ["business_head", "sub_admin"],
     items: [
       { title: "View Balance", url: "/payment" },
       { title: "Transaction History", url: "/transaction-history" },
+    ],
+  },
+    {
+    title: "Templates",
+    icon: BookAIcon,
+    url: "#",
+    allowedRoles: ["business_head", "sub_admin"],
+    items: [
+      { title: "Email", url: "/email-templates" },
+      // { title: "Transaction History", url: "/transaction-history" },
     ],
   },
 ]

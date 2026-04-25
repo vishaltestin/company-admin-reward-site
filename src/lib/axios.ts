@@ -32,8 +32,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 || error.response?.status === 419) {
       useAuthStore.getState().clearUser()
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login"
+      if (window.location.pathname !== `${import.meta.env.BASE_URL}/login`) {
+        window.location.href = `${import.meta.env.BASE_URL}/login`
       }
     }
     return Promise.reject(error)
