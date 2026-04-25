@@ -23,12 +23,15 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { api } from "@/lib/axios"
+import dynamicVariablesPlugin from "@/lib/grapesjs-dynamic-vars"
 
 export default function TemplateEditor() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const editorRef = useRef<HTMLDivElement>(null)
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
+
+  // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [editName, setEditName] = useState("")
   const [editSubject, setEditSubject] = useState("")
@@ -43,7 +46,6 @@ export default function TemplateEditor() {
   useEffect(() => {
     if (!editorRef.current || !template) return
 
-    // Clean up previous instance to prevent memory leaks in React strict mode
     if (editorInstance) {
       editorInstance.destroy()
     }
@@ -53,23 +55,24 @@ export default function TemplateEditor() {
 
     const editor = grapesjs.init({
       container: editorRef.current,
-      plugins: [newsletterPreset],
-      pluginsOpts: {
-        [newsletterPreset as any]: {
-          // Custom preset options can go here
-        },
-      },
-      storageManager: false, // We use TanStack Query for manual saving
+      plugins: [
+        newsletterPreset,
+        (ed) =>
+          dynamicVariablesPlugin(ed, {
+            variables: template.available_variables || [],
+          }),
+      ],
+      // REMOVED pluginsOpts ENTIRELY to fix the TS 'any' error!
+
+      storageManager: false,
       height: "100%",
       width: "100%",
-      //   dragMode: "absolute",
 
       // 3. Image Upload Configuration
       assetManager: {
         upload: `${BACKEND_URL}/api/admin/email-templates/upload-image`,
         uploadName: "files",
-        // Laravel Sanctum requires the CSRF token and credentials for API requests
-        credentials: "include", // Use omit if CORS is tricky, but 'include' if cookies are needed
+        credentials: "include",
         headers: {
           Accept: "application/json",
           "X-XSRF-TOKEN": decodeURIComponent(Cookies.get("XSRF-TOKEN") || ""),
@@ -77,15 +80,18 @@ export default function TemplateEditor() {
       },
     })
 
-    // // 4. Load the existing design
-    // // If we have the exact JSON project state, load that for a perfect recreation
-    // if (template.design_json && Object.keys(template.design_json).length > 0) {
-    //   editor.loadProjectData(template.design_json)
-    // }
-    // // Fallback: If it's a new master template and only has raw HTML, load that
-    // else if (template.html_body) {
-    //   editor.setComponents(template.html_body)
-    // }
+    editor.on("asset:upload:start", () =>
+      toast.loading("Uploading image...", { id: "gjs-upload" })
+    )
+    editor.on("asset:upload:response", () => {
+      toast.dismiss("gjs-upload")
+      toast.success("Image uploaded successfully!")
+    })
+    editor.on("asset:upload:error", (err) => {
+      toast.dismiss("gjs-upload")
+      console.error("GrapesJS Upload Error:", err)
+      toast.error("Image upload failed. Check file size and format.")
+    })
 
     try {
       const projectData =
@@ -116,20 +122,21 @@ export default function TemplateEditor() {
 
     setEditorInstance(editor)
 
-    // Cleanup on unmount
     return () => {
       editor.destroy()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template])
 
-  useEffect(() => {
+  // THE REACT FIX: Only populate state when opening the modal!
+  const handleOpenSettings = () => {
     if (template) {
       setEditName(template.name)
       setEditSubject(template.subject)
       setEditThumbnail(template.thumbnail_path || "")
     }
-  }, [template])
+    setIsSettingsOpen(true)
+  }
 
   const handleThumbnailUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -172,18 +179,14 @@ export default function TemplateEditor() {
     setIsSettingsOpen(false)
   }
 
-  // 5. Handle the Save Action
   const handleSave = () => {
     if (!editorInstance || !template) return
 
-    // Core Magic: This command injects all CSS directly into the HTML tags
-    // (e.g., <div style="color: red;">) which is mandatory for email clients.
     const htmlBody = editorInstance.runCommand("gjs-get-inlined-html")
     const cleanedHtml = htmlBody
       .replace(/<\/?body[^>]*>/g, "")
       .replace(/<\/?html[^>]*>/g, "")
 
-    // Grab the full JSON state so the builder looks exactly the same next time
     const designJson = editorInstance.getProjectData()
 
     updateMutation.mutate({
@@ -195,7 +198,6 @@ export default function TemplateEditor() {
     })
   }
 
-  // Loading Screen
   if (isFetching) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-50">
@@ -228,24 +230,125 @@ export default function TemplateEditor() {
           </div>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={updateMutation.isPending}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
-        >
-          {updateMutation.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {updateMutation.isPending ? "Saving changes..." : "Save Template"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleOpenSettings} // UPDATED THIS LINE
+            className="rounded-md p-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+            title="Template Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+          >
+            {updateMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {updateMutation.isPending ? "Saving changes..." : "Save Template"}
+          </button>
+        </div>
       </div>
 
-      {/* The GrapesJS Canvas Area */}
       <div className="relative w-full flex-1">
         <div ref={editorRef} className="absolute inset-0"></div>
       </div>
+
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Template Settings</DialogTitle>
+            <DialogDescription>
+              Update the name, subject line, and thumbnail cover for this
+              template.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4 text-gray-900">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Internal Template Name
+              </label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full rounded-md border p-2 text-sm"
+                placeholder="e.g., Diwali 2026 Promo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email Subject Line</label>
+              <input
+                type="text"
+                value={editSubject}
+                onChange={(e) => setEditSubject(e.target.value)}
+                className="w-full rounded-md border p-2 text-sm"
+                placeholder="Check out these deals!"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Thumbnail Image</label>
+              <div className="flex items-center gap-4">
+                {editThumbnail ? (
+                  <div className="h-16 w-24 overflow-hidden rounded border bg-gray-100">
+                    <img
+                      src={editThumbnail}
+                      alt="Thumbnail"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-24 items-center justify-center rounded border border-dashed bg-gray-50 text-gray-400">
+                    <ImageIcon className="h-6 w-6" />
+                  </div>
+                )}
+
+                <div className="relative flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleThumbnailUpload}
+                    disabled={isUploadingThumb}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    disabled={isUploadingThumb}
+                    className="flex items-center gap-2 rounded border bg-white px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {isUploadingThumb ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Upload Image"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <button
+              onClick={() => setIsSettingsOpen(false)}
+              className="rounded-md px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveSettings}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            >
+              Save Settings
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

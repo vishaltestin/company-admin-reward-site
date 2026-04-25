@@ -10,6 +10,7 @@ import { toast } from "sonner"
 export interface EmailTemplateDetail extends EmailTemplate {
   html_body: string
   design_json: Record<string, unknown> | null
+  available_variables: { name: string; value: string }[]
 }
 
 export interface SidebarEvent {
