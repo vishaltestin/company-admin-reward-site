@@ -104,14 +104,14 @@ const navItems: NavItem[] = [
       { title: "Transaction History", url: "/transaction-history" },
     ],
   },
-    {
+  {
     title: "Templates",
     icon: BookAIcon,
     url: "#",
     allowedRoles: ["business_head", "sub_admin"],
     items: [
       { title: "Email", url: "/email-templates" },
-      // { title: "Transaction History", url: "/transaction-history" },
+      { title: "Landing Page", url: "/landing-page-templates" },
     ],
   },
 ]

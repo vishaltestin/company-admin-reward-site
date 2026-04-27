@@ -9,6 +9,7 @@ import SettingsPage from "@/pages/Settings"
 import StorefrontPage from "@/pages/Storefront"
 import EmailTemplatesPage from "@/pages/EmailTemplatesPage"
 import TemplateEditor from "@/components/features/email-templates/TemplateEditor"
+import LandingPagesPage from "@/pages/LandingPagesPage"
 
 export const router = createBrowserRouter(
   [
@@ -47,9 +48,7 @@ export const router = createBrowserRouter(
             { path: "/dashboard", element: <Dashboard /> },
             {
               element: (
-                <ProtectedRoute
-                  allowedRoles={["business_head", "sub_admin"]}
-                />
+                <ProtectedRoute allowedRoles={["business_head", "sub_admin"]} />
               ),
               children: [
                 { path: "/system-admins", element: <SystemAdminsPage /> },
@@ -57,6 +56,10 @@ export const router = createBrowserRouter(
                 { path: "/employees", element: <EmployeesPage /> },
                 { path: "/settings", element: <SettingsPage /> },
                 { path: "/email-templates", element: <EmailTemplatesPage /> },
+                {
+                  path: "/landing-page-templates",
+                  element: <LandingPagesPage />,
+                },
                 {
                   path: "/email-templates/editor/:id",
                   element: <TemplateEditor />,
