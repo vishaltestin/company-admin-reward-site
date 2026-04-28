@@ -1,10 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { toast } from "sonner"
-
-// ==========================================
-// 1. TYPES & INTERFACES
-// ==========================================
+import type { PageBlock } from "@/types/builder"
 
 export interface LandingPageTemplate {
   id: number
@@ -17,7 +14,7 @@ export interface LandingPageTemplate {
 export interface LandingPageDetail extends LandingPageTemplate {
   global_theme_tokens: Record<string, unknown> | null
   seo_meta: Record<string, unknown> | null
-  page_schema: any[]
+  page_schema: PageBlock[]
   available_variables: { name: string; value: string }[]
 }
 
@@ -39,10 +36,6 @@ export interface SidebarVertical {
   name: string
   items: (SidebarEvent | SidebarGroup)[]
 }
-
-// ==========================================
-// 2. FETCH HOOKS (Queries)
-// ==========================================
 
 export const useLandingPageSidebarQuery = () => {
   return useQuery({
@@ -87,9 +80,6 @@ export const useLandingPageDetailQuery = (id: string | undefined) => {
   })
 }
 
-// ==========================================
-// 3. ACTION HOOKS (Mutations)
-// ==========================================
 export const useLandingPageMutations = () => {
   const queryClient = useQueryClient()
 
@@ -126,5 +116,33 @@ export const useLandingPageMutations = () => {
     },
   })
 
-  return { duplicateMutation, deleteMutation }
+  const updateMutation = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number
+      data: {
+        name?: string
+        title?: string
+        status?: "draft" | "published" | "archived"
+        global_theme_tokens?: Record<string, unknown>
+        seo_meta?: Record<string, unknown>
+        page_schema?: PageBlock[]
+        is_active?: boolean
+      }
+    }) => {
+      const response = await api.put(`/landing-pages/${id}`, data)
+      return response.data
+    },
+    onSuccess: () => {
+      toast.success("Landing page saved successfully!")
+      queryClient.invalidateQueries({ queryKey: ["landing-pages"] })
+    },
+    onError: () => {
+      toast.error("Failed to save landing page.")
+    },
+  })
+
+  return { duplicateMutation, deleteMutation, updateMutation }
 }

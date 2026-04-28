@@ -10,6 +10,8 @@ import StorefrontPage from "@/pages/Storefront"
 import EmailTemplatesPage from "@/pages/EmailTemplatesPage"
 import TemplateEditor from "@/components/features/email-templates/TemplateEditor"
 import LandingPagesPage from "@/pages/LandingPagesPage"
+import LandingPageEditor from "@/pages/LandingPageEditor"
+import LandingPagePreview from "@/pages/LandingPagePreview"
 
 export const router = createBrowserRouter(
   [
@@ -63,6 +65,14 @@ export const router = createBrowserRouter(
                 {
                   path: "/email-templates/editor/:id",
                   element: <TemplateEditor />,
+                },
+                {
+                  path: "/landing-pages/editor/:id",
+                  element: <LandingPageEditor />,
+                },
+                {
+                  path: "/landing-pages/preview/:id",
+                  element: <LandingPagePreview />,
                 },
               ],
             },

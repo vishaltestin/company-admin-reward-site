@@ -19,7 +19,6 @@ export function LandingPageSidebar({
 }: SidebarProps) {
   const { data: verticals, isLoading } = useLandingPageSidebarQuery()
 
-  // Track which groups (parent events) are expanded in the UI
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {}
   )
@@ -58,7 +57,6 @@ export function LandingPageSidebar({
 
             <div className="space-y-1">
               {vertical.items.map((item, index) => {
-                // Render a Parent Event Group (has children)
                 if (item.type === "group") {
                   const isExpanded = expandedGroups[item.title]
                   return (
@@ -78,7 +76,6 @@ export function LandingPageSidebar({
                         )}
                       </button>
 
-                      {/* Render Children inside the group */}
                       {isExpanded && (
                         <div className="mt-1 ml-4 space-y-1 border-l pl-2">
                           {item.events.map((child) => (
@@ -108,7 +105,6 @@ export function LandingPageSidebar({
                   )
                 }
 
-                // Render a Single Event (no children)
                 return (
                   <button
                     key={`event-${item.id}`}

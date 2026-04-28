@@ -25,7 +25,6 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
   const navigate = useNavigate()
 
-  // State for the Duplicate Modal
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
   const [templateToDuplicate, setTemplateToDuplicate] =
     useState<LandingPageTemplate | null>(null)
@@ -76,7 +75,6 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50/30">
-      {/* Tab Header */}
       <div className="flex space-x-6 border-b bg-white px-8 pt-6">
         <button
           onClick={() => setActiveTab("global")}
@@ -100,7 +98,6 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
         </button>
       </div>
 
-      {/* Grid Content */}
       <div className="flex-1 overflow-y-auto p-8">
         {isLoading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -132,7 +129,6 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
                         Title: {template.title}
                       </p>
                     </div>
-                    {/* Status Badge */}
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         template.status === "published"
@@ -147,7 +143,6 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
                     </span>
                   </div>
 
-                  {/* Actions */}
                   <div className="mt-6 flex items-center justify-between border-t pt-4">
                     {activeTab === "global" ? (
                       <button
@@ -162,7 +157,7 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
                         <button
                           onClick={() =>
                             navigate(
-                              `/admin/landing-pages/editor/${template.id}`
+                              `/landing-pages/editor/${template.id}`
                             )
                           }
                           className="flex flex-1 items-center justify-center gap-2 rounded-md bg-gray-900 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
@@ -194,7 +189,6 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
         )}
       </div>
 
-      {/* Duplicate Modal */}
       <Dialog open={duplicateModalOpen} onOpenChange={setDuplicateModalOpen}>
         <DialogContent>
           <DialogHeader>
