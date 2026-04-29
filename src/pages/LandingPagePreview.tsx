@@ -1,10 +1,8 @@
 import { useParams } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 import { useLandingPageDetailQuery } from "@/hooks/landing-pages"
-import { type PageBlock } from "@/types/builder"
-
-import { HeroBanner } from "@/components/features/landing-pages/blocks/HeroBanner"
-import { VideoSection } from "@/components/features/landing-pages/blocks/VideoSection"
+import { type PageBlock, type ThemeTokens } from "@/types/builder"
+import { BlockRenderer } from "@/components/features/landing-pages/builder/BlockRenderer"
 
 export default function LandingPagePreview() {
   const { id } = useParams<{ id: string }>()
@@ -24,21 +22,24 @@ export default function LandingPagePreview() {
     )
   }
 
-  const blocks: PageBlock[] = template.page_schema || []
-
-  const renderBlock = (block: PageBlock) => {
-    switch (block.type) {
-      case "HeroBanner":
-        return <HeroBanner block={block} />
-      case "VideoSection":
-        return <VideoSection block={block} />
-      default:
-        return null
-    }
+  const blocks = (template.page_schema || []) as PageBlock[]
+  const theme = (template.global_theme_tokens as ThemeTokens) || {
+    primaryColor: "#2563eb",
+    textColor: "#111827",
+    fontFamily: "Inter, sans-serif",
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className="min-h-screen bg-white"
+      style={
+        {
+          "--theme-primary": theme.primaryColor,
+          "--theme-text": theme.textColor,
+          fontFamily: theme.fontFamily,
+        } as React.CSSProperties
+      }
+    >
       <div className="sticky top-0 z-50 bg-gray-900 py-2 text-center text-xs font-medium text-white">
         Preview Mode: {template.title}
       </div>
@@ -50,7 +51,7 @@ export default function LandingPagePreview() {
       ) : (
         blocks.map((block) => {
           if (!block.isVisible) return null
-          return <div key={block.id}>{renderBlock(block)}</div>
+          return <BlockRenderer key={block.id} block={block} />
         })
       )}
     </div>

@@ -156,9 +156,9 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
       },
       styles: {
         padding: "py-16",
-        backgroundColor: "", // Empty triggers fallback
-        playButtonColor: "", // Empty triggers fallback
-        captionColor: "", // Empty triggers fallback
+        backgroundColor: "",
+        playButtonColor: "",
+        captionColor: "",
       },
     },
   },
@@ -175,6 +175,12 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
       content: [
         { name: "heading", label: "Heading", type: "text" },
         { name: "buttonText", label: "Button Text", type: "text" },
+        {
+          name: "buttonLink",
+          label: "Button URL",
+          type: "text",
+          placeholder: "https://...",
+        },
       ],
       styles: [
         { name: "backgroundColor", label: "Background Color", type: "color" },

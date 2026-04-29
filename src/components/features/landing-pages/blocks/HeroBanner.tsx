@@ -1,17 +1,18 @@
-import { type PageBlock } from "@/types/builder"
+import { sanitizeUrl } from "@/lib/sanitize"
+import { type HeroBannerBlock } from "@/types/builder"
 
 interface Props {
-  block: PageBlock
+  block: HeroBannerBlock
 }
 
 export function HeroBanner({ block }: Props) {
   const { content, styles, variant } = block
 
-  const bgColor = (styles.backgroundColor as string) || "transparent"
-  const headingColor = (styles.headingColor as string) || "var(--theme-text)"
-  const subtextColor = (styles.subtextColor as string) || "var(--theme-text)"
-  const buttonBg = (styles.buttonBgColor as string) || "var(--theme-primary)"
-  const buttonText = (styles.buttonTextColor as string) || "#ffffff"
+  const bgColor = styles.backgroundColor || "transparent"
+  const headingColor = styles.headingColor || "var(--theme-text)"
+  const subtextColor = styles.subtextColor || "var(--theme-text)"
+  const buttonBg = styles.buttonBgColor || "var(--theme-primary)"
+  const buttonText = styles.buttonTextColor || "#ffffff"
 
   if (variant === "split") {
     return (
@@ -24,21 +25,21 @@ export function HeroBanner({ block }: Props) {
             className="mb-4 text-4xl font-bold tracking-tight"
             style={{ color: headingColor }}
           >
-            {content.heading as string}
+            {content.heading}
           </h1>
           <p
             className="mb-8 text-lg whitespace-pre-wrap opacity-90"
             style={{ color: subtextColor }}
           >
-            {content.subtext as string}
+            {content.subtext}
           </p>
           {content.buttonText && (
             <a
-              href={(content.buttonLink as string) || "#"}
+              href={sanitizeUrl(content.buttonLink)}
               className="inline-flex h-12 items-center justify-center rounded-md px-8 font-medium shadow transition-opacity hover:opacity-90"
               style={{ backgroundColor: buttonBg, color: buttonText }}
             >
-              {content.buttonText as string}
+              {content.buttonText}
             </a>
           )}
         </div>
@@ -46,7 +47,7 @@ export function HeroBanner({ block }: Props) {
           className="h-full min-h-[400px] flex-1 bg-cover bg-center"
           style={{
             backgroundImage: styles.backgroundImage
-              ? `url(${styles.backgroundImage as string})`
+              ? `url(${styles.backgroundImage})`
               : "none",
           }}
         />
@@ -60,16 +61,16 @@ export function HeroBanner({ block }: Props) {
       style={{
         backgroundColor: bgColor,
         backgroundImage: styles.backgroundImage
-          ? `url(${styles.backgroundImage as string})`
+          ? `url(${styles.backgroundImage})`
           : "none",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      {(styles.overlayOpacity as number) > 0 && (
+      {styles.overlayOpacity > 0 && (
         <div
           className="absolute inset-0 bg-black"
-          style={{ opacity: (styles.overlayOpacity as number) / 100 }}
+          style={{ opacity: styles.overlayOpacity / 100 }}
         />
       )}
 
@@ -78,21 +79,21 @@ export function HeroBanner({ block }: Props) {
           className="mb-6 text-4xl font-extrabold tracking-tight sm:text-5xl"
           style={{ color: headingColor }}
         >
-          {content.heading as string}
+          {content.heading}
         </h1>
         <p
           className="mb-8 text-lg whitespace-pre-wrap opacity-90"
           style={{ color: subtextColor }}
         >
-          {content.subtext as string}
+          {content.subtext}
         </p>
         {content.buttonText && (
           <a
-            href={(content.buttonLink as string) || "#"}
+            href={sanitizeUrl(content.buttonLink)}
             className="inline-flex h-12 items-center justify-center rounded-md px-8 font-medium shadow transition-opacity hover:opacity-90"
             style={{ backgroundColor: buttonBg, color: buttonText }}
           >
-            {content.buttonText as string}
+            {content.buttonText}
           </a>
         )}
       </div>

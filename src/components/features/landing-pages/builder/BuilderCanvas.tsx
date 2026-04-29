@@ -1,39 +1,14 @@
-import { type PageBlock } from "@/types/builder"
-import { HeroBanner } from "../blocks/HeroBanner"
-import { VideoSection } from "../blocks/VideoSection"
-import { CallToAction } from "../blocks/CallToAction"
+import { useBuilderStore } from "@/store/useBuilderStore"
+import { BlockRenderer } from "./BlockRenderer"
 
-interface CanvasProps {
-  blocks: PageBlock[]
-  selectedBlockId: string | null
-  setSelectedBlockId: (id: string | null) => void
-  previewMode: "desktop" | "mobile"
-  globalTheme: Record<string, string>
-}
-
-export function BuilderCanvas({
-  blocks,
-  selectedBlockId,
-  setSelectedBlockId,
-  previewMode,
-  globalTheme,
-}: CanvasProps) {
-  const renderBlock = (block: PageBlock) => {
-    switch (block.type) {
-      case "HeroBanner":
-        return <HeroBanner block={block} />
-      case "VideoSection":
-        return <VideoSection block={block} />
-      case "CallToAction":
-        return <CallToAction block={block} />
-      default:
-        return (
-          <div className="bg-red-50 p-8 text-center text-red-500">
-            Unknown Block Type: {block.type}
-          </div>
-        )
-    }
-  }
+export function BuilderCanvas() {
+  const {
+    blocks,
+    selectedBlockId,
+    setSelectedBlockId,
+    previewMode,
+    globalTheme,
+  } = useBuilderStore()
 
   const canvasWrapperClass =
     previewMode === "mobile" ? "max-w-[375px]" : "max-w-[1200px]"
@@ -80,7 +55,9 @@ export function BuilderCanvas({
                     {block.type}
                   </div>
                 )}
-                <div className="pointer-events-none">{renderBlock(block)}</div>
+                <div className="pointer-events-none">
+                  <BlockRenderer block={block} />
+                </div>
               </div>
             )
           })

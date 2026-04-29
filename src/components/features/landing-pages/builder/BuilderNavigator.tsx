@@ -6,26 +6,26 @@ import {
   ArrowDown,
   LayoutTemplate,
 } from "lucide-react"
-import { type PageBlock } from "@/types/builder"
+import { useBuilderStore } from "@/store/useBuilderStore"
+import { type PageBlock, type BlockType } from "@/types/builder"
 import { AVAILABLE_BLOCKS } from "@/config/blocks.config"
 
-interface NavigatorProps {
-  blocks: PageBlock[]
-  setBlocks: React.Dispatch<React.SetStateAction<PageBlock[]>>
-  selectedBlockId: string | null
-  setSelectedBlockId: (id: string | null) => void
-}
+export function BuilderNavigator() {
+  const {
+    blocks,
+    selectedBlockId,
+    setSelectedBlockId,
+    addBlock,
+    moveBlock,
+    deleteBlock,
+    toggleBlockVisibility,
+  } = useBuilderStore()
 
-export function BuilderNavigator({
-  blocks,
-  setBlocks,
-  selectedBlockId,
-  setSelectedBlockId,
-}: NavigatorProps) {
-  const handleAddBlock = (blockType: string) => {
+  const handleAddBlock = (blockType: BlockType) => {
     const config = AVAILABLE_BLOCKS.find((b) => b.type === blockType)
     if (!config) return
 
+    // Every property is explicitly mapped to ensure no 'any' types creep in
     const newBlock: PageBlock = {
       id: crypto.randomUUID(),
       type: config.type,
@@ -33,36 +33,9 @@ export function BuilderNavigator({
       isVisible: true,
       content: { ...config.defaultData.content },
       styles: { ...config.defaultData.styles },
-    }
+    } as PageBlock
 
-    setBlocks([...blocks, newBlock])
-    setSelectedBlockId(newBlock.id)
-  }
-
-  const moveBlock = (index: number, direction: "up" | "down") => {
-    if (direction === "up" && index === 0) return
-    if (direction === "down" && index === blocks.length - 1) return
-
-    const newBlocks = [...blocks]
-    const swapIndex = direction === "up" ? index - 1 : index + 1
-    ;[newBlocks[index], newBlocks[swapIndex]] = [
-      newBlocks[swapIndex],
-      newBlocks[index],
-    ]
-    setBlocks(newBlocks)
-  }
-
-  const toggleVisibility = (id: string) => {
-    setBlocks(
-      blocks.map((b) => (b.id === id ? { ...b, isVisible: !b.isVisible } : b))
-    )
-  }
-
-  const deleteBlock = (id: string) => {
-    if (window.confirm("Remove this section from the page?")) {
-      setBlocks(blocks.filter((b) => b.id !== id))
-      if (selectedBlockId === id) setSelectedBlockId(null)
-    }
+    addBlock(newBlock)
   }
 
   return (
@@ -81,7 +54,7 @@ export function BuilderNavigator({
               return (
                 <button
                   key={config.type}
-                  onClick={() => handleAddBlock(config.type)}
+                  onClick={() => handleAddBlock(config.type as BlockType)}
                   className="flex flex-col items-center justify-center gap-2 rounded-md border border-gray-200 bg-gray-50 p-3 text-xs font-medium text-gray-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
                 >
                   <Icon className="h-5 w-5" />
@@ -121,7 +94,7 @@ export function BuilderNavigator({
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        toggleVisibility(block.id)
+                        toggleBlockVisibility(block.id)
                       }}
                       className="text-gray-400 hover:text-gray-700"
                     >
@@ -162,7 +135,9 @@ export function BuilderNavigator({
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        deleteBlock(block.id)
+                        if (window.confirm("Remove this section?")) {
+                          deleteBlock(block.id)
+                        }
                       }}
                       className="ml-1 rounded p-1.5 text-gray-400 hover:bg-red-100 hover:text-red-600"
                     >

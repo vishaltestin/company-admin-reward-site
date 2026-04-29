@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
   ArrowLeft,
@@ -7,13 +7,17 @@ import {
   ExternalLink,
   Monitor,
   Smartphone,
+  Undo2,
+  Redo2,
 } from "lucide-react"
 import {
   useLandingPageDetailQuery,
   useLandingPageMutations,
   type LandingPageDetail,
 } from "@/hooks/landing-pages"
-import { type PageBlock } from "@/types/builder"
+import { useBuilderShortcuts } from "@/hooks/useBuilderShortcuts"
+import { useBuilderStore } from "@/store/useBuilderStore"
+import { type PageBlock, type ThemeTokens } from "@/types/builder"
 
 import { BuilderNavigator } from "@/components/features/landing-pages/builder/BuilderNavigator"
 import { BuilderCanvas } from "@/components/features/landing-pages/builder/BuilderCanvas"
@@ -46,26 +50,44 @@ function LandingPageEditorCore({
   const navigate = useNavigate()
   const { updateMutation } = useLandingPageMutations()
 
-  const [blocks, setBlocks] = useState<PageBlock[]>(template.page_schema || [])
-  const [status, setStatus] = useState<"draft" | "published" | "archived">(
-    template.status
-  )
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
-  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">(
-    "desktop"
-  )
+  const {
+    status,
+    previewMode,
+    blocks,
+    globalTheme,
+    pastBlocks, // <-- Pull history state
+    futureBlocks, // <-- Pull history state
+    undo, // <-- Pull undo action
+    redo, // <-- Pull redo action
+    setStatus,
+    setPreviewMode,
+    initializeBuilder,
+  } = useBuilderStore()
+  useBuilderShortcuts()
 
-  const [globalTheme, setGlobalTheme] = useState<Record<string, string>>(
-    (template.global_theme_tokens as Record<string, string>) || {
-      primaryColor: "#2563eb",
-      textColor: "#111827",
-      fontFamily: "Inter, sans-serif",
+  useEffect(() => {
+    if (template) {
+      const safeTheme: ThemeTokens =
+        (template.global_theme_tokens as ThemeTokens) || {
+          primaryColor: "#2563eb",
+          textColor: "#111827",
+          fontFamily: "Inter, sans-serif",
+        }
+
+      initializeBuilder(
+        (template.page_schema || []) as PageBlock[],
+        template.status,
+        safeTheme
+      )
     }
-  )
+  }, [template, initializeBuilder])
 
   const handleSave = () => {
+    const numericId = parseInt(id, 10)
+    if (isNaN(numericId)) return
+
     updateMutation.mutate({
-      id: parseInt(id),
+      id: numericId,
       data: {
         page_schema: blocks,
         status: status,
@@ -112,27 +134,49 @@ function LandingPageEditorCore({
           </div>
         </div>
 
-        <div className="absolute left-1/2 flex -translate-x-1/2 items-center rounded-md border bg-gray-50 p-0.5">
-          <button
-            onClick={() => setPreviewMode("desktop")}
-            className={`flex items-center justify-center rounded px-3 py-1.5 text-xs transition-colors ${
-              previewMode === "desktop"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Monitor className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setPreviewMode("mobile")}
-            className={`flex items-center justify-center rounded px-3 py-1.5 text-xs transition-colors ${
-              previewMode === "mobile"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Smartphone className="h-4 w-4" />
-          </button>
+        {/* UNDO / REDO & DEVICE PREVIEW CONTROLS */}
+        <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-4">
+          <div className="flex items-center gap-1 rounded-md border bg-gray-50 p-0.5">
+            <button
+              onClick={undo}
+              disabled={pastBlocks.length === 0}
+              className="flex items-center justify-center rounded px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none"
+              title="Undo"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={redo}
+              disabled={futureBlocks.length === 0}
+              className="flex items-center justify-center rounded px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none"
+              title="Redo"
+            >
+              <Redo2 className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center rounded-md border bg-gray-50 p-0.5">
+            <button
+              onClick={() => setPreviewMode("desktop")}
+              className={`flex items-center justify-center rounded px-3 py-1.5 text-xs transition-colors ${
+                previewMode === "desktop"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Monitor className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setPreviewMode("mobile")}
+              className={`flex items-center justify-center rounded px-3 py-1.5 text-xs transition-colors ${
+                previewMode === "mobile"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Smartphone className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -162,26 +206,10 @@ function LandingPageEditorCore({
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <BuilderNavigator
-          blocks={blocks}
-          setBlocks={setBlocks}
-          selectedBlockId={selectedBlockId}
-          setSelectedBlockId={setSelectedBlockId}
-        />
-        <BuilderCanvas
-          blocks={blocks}
-          selectedBlockId={selectedBlockId}
-          setSelectedBlockId={setSelectedBlockId}
-          previewMode={previewMode}
-          globalTheme={globalTheme}
-        />
+        <BuilderNavigator />
+        <BuilderCanvas />
         <BuilderInspector
-          blocks={blocks}
-          setBlocks={setBlocks}
-          selectedBlockId={selectedBlockId}
           availableVariables={template?.available_variables || []}
-          globalTheme={globalTheme}
-          setGlobalTheme={setGlobalTheme}
         />
       </div>
     </div>

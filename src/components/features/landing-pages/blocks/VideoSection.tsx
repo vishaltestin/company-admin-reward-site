@@ -1,41 +1,65 @@
-import { type PageBlock } from "@/types/builder"
+import { type VideoSectionBlock } from "@/types/builder"
 
-export function VideoSection({ block }: { block: PageBlock }) {
+interface Props {
+  block: VideoSectionBlock
+}
+
+export function VideoSection({ block }: Props) {
   const { content, styles, variant } = block
 
-  const bgColor = (styles.backgroundColor as string) || "transparent"
-  const playButtonColor =
-    (styles.playButtonColor as string) || "var(--theme-primary)"
-  const captionColor = (styles.captionColor as string) || "var(--theme-text)"
+  const bgColor = styles.backgroundColor || "transparent"
+  const captionColor = styles.captionColor || "var(--theme-text)"
+
+  // Helper to convert standard URLs into iFrame Embed URLs
+  const getEmbedUrl = (url: string, autoPlay: boolean) => {
+    if (!url) return null
+
+    let embedUrl = ""
+    // Autoplay usually requires mute to bypass browser restrictions
+    const autoPlayParams = autoPlay ? "&autoplay=1&mute=1" : ""
+
+    try {
+      if (url.includes("youtube.com") || url.includes("youtu.be")) {
+        const videoId = url.includes("v=")
+          ? new URL(url).searchParams.get("v")
+          : url.split("/").pop()
+        embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0${autoPlayParams}`
+      } else if (url.includes("vimeo.com")) {
+        const videoId = url.split("/").pop()
+        embedUrl = `https://player.vimeo.com/video/${videoId}?title=0&byline=0&portrait=0${autoPlayParams}`
+      }
+    } catch (e) {
+      console.log(e)
+      return null
+    }
+
+    return embedUrl || null
+  }
+
+  const embedUrl = getEmbedUrl(content.videoUrl, content.autoPlay)
 
   return (
-    <div
-      style={{ backgroundColor: bgColor }}
-      className={styles.padding as string}
-    >
+    <div style={{ backgroundColor: bgColor }} className={styles.padding}>
       <div
         className={`mx-auto ${variant === "full" ? "w-full px-0" : "max-w-5xl px-6"}`}
       >
         <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-gray-800 bg-gray-900 shadow-xl">
-          {content.videoUrl ? (
-            <div className="flex flex-col items-center text-gray-400">
-              <div
-                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105"
-                style={{ backgroundColor: playButtonColor }}
-              >
-                <div className="ml-1 h-0 w-0 border-t-[10px] border-b-[10px] border-l-[16px] border-t-transparent border-b-transparent border-l-white" />
-              </div>
-              <p className="text-sm font-medium">
-                {content.videoUrl as string}
-              </p>
-              {content.autoPlay === true && (
-                <span className="mt-2 text-xs text-gray-500">
-                  Autoplay Enabled
-                </span>
-              )}
-            </div>
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="absolute inset-0 h-full w-full border-0"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              title={content.caption || "Video player"}
+            />
           ) : (
-            <p className="text-gray-500">Please provide a video URL</p>
+            <div className="flex flex-col items-center text-gray-400">
+              <p className="text-sm font-medium">
+                {content.videoUrl
+                  ? "Invalid video URL. Please use YouTube or Vimeo."
+                  : "Please provide a video URL in the inspector"}
+              </p>
+            </div>
           )}
         </div>
         {content.caption && (
@@ -43,7 +67,7 @@ export function VideoSection({ block }: { block: PageBlock }) {
             className="mt-4 text-center text-sm italic"
             style={{ color: captionColor }}
           >
-            {content.caption as string}
+            {content.caption}
           </p>
         )}
       </div>

@@ -1,18 +1,17 @@
-import { type PageBlock } from "@/types/builder"
+import { sanitizeUrl } from "@/lib/sanitize"
+import { type CallToActionBlock } from "@/types/builder"
 
 interface Props {
-  block: PageBlock
+  block: CallToActionBlock
 }
 
 export function CallToAction({ block }: Props) {
   const { content, styles, variant } = block
 
-  // --- FALLBACK LOGIC ---
-  const bgColor = (styles.backgroundColor as string) || "var(--theme-primary)"
-  const headingColor = (styles.headingColor as string) || "#ffffff"
-  const buttonBg = (styles.buttonBgColor as string) || "#ffffff"
-  const buttonText =
-    (styles.buttonTextColor as string) || "var(--theme-primary)"
+  const bgColor = styles.backgroundColor || "var(--theme-primary)"
+  const headingColor = styles.headingColor || "#ffffff"
+  const buttonBg = styles.buttonBgColor || "#ffffff"
+  const buttonText = styles.buttonTextColor || "var(--theme-primary)"
 
   if (variant === "card") {
     return (
@@ -25,15 +24,15 @@ export function CallToAction({ block }: Props) {
             className="mb-8 text-3xl font-bold tracking-tight sm:text-4xl"
             style={{ color: headingColor }}
           >
-            {content.heading as string}
+            {content.heading}
           </h2>
           {content.buttonText && (
             <a
-              href="#"
+              href={sanitizeUrl(content.buttonLink)}
               className="inline-flex h-12 items-center justify-center rounded-md px-8 font-semibold shadow-sm transition-opacity hover:opacity-90"
               style={{ backgroundColor: buttonBg, color: buttonText }}
             >
-              {content.buttonText as string}
+              {content.buttonText}
             </a>
           )}
         </div>
@@ -51,15 +50,15 @@ export function CallToAction({ block }: Props) {
           className="mb-8 text-3xl font-extrabold tracking-tight sm:text-5xl"
           style={{ color: headingColor }}
         >
-          {content.heading as string}
+          {content.heading}
         </h2>
         {content.buttonText && (
           <a
-            href="#"
+            href={sanitizeUrl(content.buttonLink)}
             className="inline-flex h-14 items-center justify-center rounded-md px-10 text-lg font-bold shadow-sm transition-opacity hover:opacity-90"
             style={{ backgroundColor: buttonBg, color: buttonText }}
           >
-            {content.buttonText as string}
+            {content.buttonText}
           </a>
         )}
       </div>
