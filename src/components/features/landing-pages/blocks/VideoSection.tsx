@@ -3,9 +3,14 @@ import { type PageBlock } from "@/types/builder"
 export function VideoSection({ block }: { block: PageBlock }) {
   const { content, styles, variant } = block
 
+  const bgColor = (styles.backgroundColor as string) || "transparent"
+  const playButtonColor =
+    (styles.playButtonColor as string) || "var(--theme-primary)"
+  const captionColor = (styles.captionColor as string) || "var(--theme-text)"
+
   return (
     <div
-      style={{ backgroundColor: styles.backgroundColor as string }}
+      style={{ backgroundColor: bgColor }}
       className={styles.padding as string}
     >
       <div
@@ -14,14 +19,15 @@ export function VideoSection({ block }: { block: PageBlock }) {
         <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-gray-800 bg-gray-900 shadow-xl">
           {content.videoUrl ? (
             <div className="flex flex-col items-center text-gray-400">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+              <div
+                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105"
+                style={{ backgroundColor: playButtonColor }}
+              >
                 <div className="ml-1 h-0 w-0 border-t-[10px] border-b-[10px] border-l-[16px] border-t-transparent border-b-transparent border-l-white" />
               </div>
               <p className="text-sm font-medium">
                 {content.videoUrl as string}
               </p>
-
-              {/* Type guard for boolean */}
               {content.autoPlay === true && (
                 <span className="mt-2 text-xs text-gray-500">
                   Autoplay Enabled
@@ -33,7 +39,10 @@ export function VideoSection({ block }: { block: PageBlock }) {
           )}
         </div>
         {content.caption && (
-          <p className="mt-4 text-center text-sm text-gray-500 italic">
+          <p
+            className="mt-4 text-center text-sm italic"
+            style={{ color: captionColor }}
+          >
             {content.caption as string}
           </p>
         )}

@@ -5,8 +5,8 @@ import {
   Save,
   Loader2,
   ExternalLink,
-  Monitor, // NEW: Desktop icon
-  Smartphone, // NEW: Mobile icon
+  Monitor,
+  Smartphone,
 } from "lucide-react"
 import {
   useLandingPageDetailQuery,
@@ -19,7 +19,6 @@ import { BuilderNavigator } from "@/components/features/landing-pages/builder/Bu
 import { BuilderCanvas } from "@/components/features/landing-pages/builder/BuilderCanvas"
 import { BuilderInspector } from "@/components/features/landing-pages/builder/BuilderInspector"
 
-// --- 1. THE WRAPPER ---
 export default function LandingPageEditor() {
   const { id } = useParams<{ id: string }>()
   const { data: template, isLoading } = useLandingPageDetailQuery(id)
@@ -37,7 +36,6 @@ export default function LandingPageEditor() {
   return <LandingPageEditorCore template={template} id={id} />
 }
 
-// --- 2. THE CORE ---
 function LandingPageEditorCore({
   template,
   id,
@@ -53,10 +51,16 @@ function LandingPageEditorCore({
     template.status
   )
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
-
-  // NEW: State to track device preview mode
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">(
     "desktop"
+  )
+
+  const [globalTheme, setGlobalTheme] = useState<Record<string, string>>(
+    (template.global_theme_tokens as Record<string, string>) || {
+      primaryColor: "#2563eb",
+      textColor: "#111827",
+      fontFamily: "Inter, sans-serif",
+    }
   )
 
   const handleSave = () => {
@@ -65,6 +69,7 @@ function LandingPageEditorCore({
       data: {
         page_schema: blocks,
         status: status,
+        global_theme_tokens: globalTheme,
       },
     })
   }
@@ -77,7 +82,6 @@ function LandingPageEditorCore({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gray-100">
-      {/* --- TOP NAVBAR --- */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-white px-4 shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
@@ -108,7 +112,6 @@ function LandingPageEditorCore({
           </div>
         </div>
 
-        {/* NEW: Device Toggle Controls in the center of the navbar */}
         <div className="absolute left-1/2 flex -translate-x-1/2 items-center rounded-md border bg-gray-50 p-0.5">
           <button
             onClick={() => setPreviewMode("desktop")}
@@ -158,7 +161,6 @@ function LandingPageEditorCore({
         </div>
       </header>
 
-      {/* --- THREE-PANE WORKSPACE --- */}
       <div className="flex flex-1 overflow-hidden">
         <BuilderNavigator
           blocks={blocks}
@@ -171,12 +173,15 @@ function LandingPageEditorCore({
           selectedBlockId={selectedBlockId}
           setSelectedBlockId={setSelectedBlockId}
           previewMode={previewMode}
+          globalTheme={globalTheme}
         />
         <BuilderInspector
           blocks={blocks}
           setBlocks={setBlocks}
           selectedBlockId={selectedBlockId}
           availableVariables={template?.available_variables || []}
+          globalTheme={globalTheme}
+          setGlobalTheme={setGlobalTheme}
         />
       </div>
     </div>

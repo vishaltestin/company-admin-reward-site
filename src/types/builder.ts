@@ -1,4 +1,5 @@
 export type BlockValue = string | number | boolean | undefined
+
 export interface PageBlock {
   id: string
   type: string

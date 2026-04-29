@@ -8,6 +8,7 @@ interface CanvasProps {
   selectedBlockId: string | null
   setSelectedBlockId: (id: string | null) => void
   previewMode: "desktop" | "mobile"
+  globalTheme: Record<string, string>
 }
 
 export function BuilderCanvas({
@@ -15,6 +16,7 @@ export function BuilderCanvas({
   selectedBlockId,
   setSelectedBlockId,
   previewMode,
+  globalTheme,
 }: CanvasProps) {
   const renderBlock = (block: PageBlock) => {
     switch (block.type) {
@@ -43,6 +45,13 @@ export function BuilderCanvas({
     >
       <div
         className={`mx-auto flex min-h-[800px] w-full flex-col overflow-hidden bg-white shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 ease-in-out ${canvasWrapperClass}`}
+        style={
+          {
+            "--theme-primary": globalTheme.primaryColor,
+            "--theme-text": globalTheme.textColor,
+            fontFamily: globalTheme.fontFamily,
+          } as React.CSSProperties
+        }
       >
         {blocks.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-gray-400">
@@ -51,7 +60,6 @@ export function BuilderCanvas({
         ) : (
           blocks.map((block) => {
             if (!block.isVisible) return null
-
             const isSelected = selectedBlockId === block.id
 
             return (
@@ -72,7 +80,6 @@ export function BuilderCanvas({
                     {block.type}
                   </div>
                 )}
-
                 <div className="pointer-events-none">{renderBlock(block)}</div>
               </div>
             )

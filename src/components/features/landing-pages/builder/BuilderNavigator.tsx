@@ -45,7 +45,6 @@ export function BuilderNavigator({
 
     const newBlocks = [...blocks]
     const swapIndex = direction === "up" ? index - 1 : index + 1
-
     ;[newBlocks[index], newBlocks[swapIndex]] = [
       newBlocks[swapIndex],
       newBlocks[index],
@@ -72,7 +71,6 @@ export function BuilderNavigator({
         <h2 className="mb-4 text-sm font-semibold text-gray-900">
           Page Structure
         </h2>
-
         <div className="space-y-2">
           <p className="text-xs font-medium tracking-wider text-gray-500 uppercase">
             Add Section
@@ -99,7 +97,6 @@ export function BuilderNavigator({
         <p className="mb-3 text-xs font-medium tracking-wider text-gray-500 uppercase">
           Current Layers
         </p>
-
         {blocks.length === 0 ? (
           <div className="rounded-lg border-2 border-dashed border-gray-100 py-8 text-center text-sm text-gray-400">
             No sections added yet.

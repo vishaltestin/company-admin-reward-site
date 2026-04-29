@@ -15,26 +15,24 @@ export type FieldType =
   | "number"
 
 export interface BlockField {
-  name: string 
-  label: string 
-  type: FieldType 
+  name: string
+  label: string
+  type: FieldType
   placeholder?: string
-  options?: { label: string; value: string }[] 
-  min?: number 
+  options?: { label: string; value: string }[]
+  min?: number
   max?: number
 }
 
 export interface BlockConfig {
   type: string
-  label: string 
-  icon: LucideIcon 
-  variants: { label: string; value: string }[] 
-
+  label: string
+  icon: LucideIcon
+  variants: { label: string; value: string }[]
   fields: {
-    content: BlockField[] 
+    content: BlockField[]
     styles: BlockField[]
   }
-
   defaultData: {
     variant: string
     content: Record<string, string | number | boolean>
@@ -57,7 +55,7 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
           name: "heading",
           label: "Main Heading",
           type: "text",
-          placeholder: "Welcome {{first_name}}!",
+          placeholder: "Welcome!",
         },
         {
           name: "subtext",
@@ -80,16 +78,6 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
       ],
       styles: [
         { name: "backgroundImage", label: "Background Image", type: "image" },
-        { name: "backgroundColor", label: "Background Color", type: "color" },
-        {
-          name: "textColor",
-          label: "Text Color",
-          type: "select",
-          options: [
-            { label: "Dark", value: "text-gray-900" },
-            { label: "Light", value: "text-white" },
-          ],
-        },
         {
           name: "overlayOpacity",
           label: "Image Darken Overlay (%)",
@@ -97,6 +85,11 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
           min: 0,
           max: 100,
         },
+        { name: "backgroundColor", label: "Background Color", type: "color" },
+        { name: "headingColor", label: "Heading Color", type: "color" },
+        { name: "subtextColor", label: "Subtext Color", type: "color" },
+        { name: "buttonBgColor", label: "Button Background", type: "color" },
+        { name: "buttonTextColor", label: "Button Text Color", type: "color" },
       ],
     },
     defaultData: {
@@ -109,9 +102,12 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
       },
       styles: {
         backgroundImage: "",
-        backgroundColor: "#f8fafc",
-        textColor: "text-gray-900",
         overlayOpacity: 0,
+        backgroundColor: "", // Empty triggers fallback
+        headingColor: "", // Empty triggers fallback
+        subtextColor: "", // Empty triggers fallback
+        buttonBgColor: "", // Empty triggers fallback
+        buttonTextColor: "", // Empty triggers fallback
       },
     },
   },
@@ -137,6 +133,8 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
       ],
       styles: [
         { name: "backgroundColor", label: "Section Background", type: "color" },
+        { name: "playButtonColor", label: "Play Button Color", type: "color" },
+        { name: "captionColor", label: "Caption Text Color", type: "color" },
         {
           name: "padding",
           label: "Top/Bottom Padding",
@@ -157,8 +155,10 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
         autoPlay: false,
       },
       styles: {
-        backgroundColor: "#ffffff",
         padding: "py-16",
+        backgroundColor: "", // Empty triggers fallback
+        playButtonColor: "", // Empty triggers fallback
+        captionColor: "", // Empty triggers fallback
       },
     },
   },
@@ -177,16 +177,10 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
         { name: "buttonText", label: "Button Text", type: "text" },
       ],
       styles: [
-        {
-          name: "theme",
-          label: "Color Theme",
-          type: "select",
-          options: [
-            { label: "Primary Brand", value: "primary" },
-            { label: "Dark Mode", value: "dark" },
-            { label: "Light Bordered", value: "light" },
-          ],
-        },
+        { name: "backgroundColor", label: "Background Color", type: "color" },
+        { name: "headingColor", label: "Heading Color", type: "color" },
+        { name: "buttonBgColor", label: "Button Background", type: "color" },
+        { name: "buttonTextColor", label: "Button Text Color", type: "color" },
       ],
     },
     defaultData: {
@@ -196,7 +190,10 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
         buttonText: "Join Now",
       },
       styles: {
-        theme: "primary",
+        backgroundColor: "",
+        headingColor: "",
+        buttonBgColor: "",
+        buttonTextColor: "",
       },
     },
   },
