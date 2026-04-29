@@ -1,18 +1,20 @@
 import { type PageBlock } from "@/types/builder"
 import { HeroBanner } from "../blocks/HeroBanner"
 import { VideoSection } from "../blocks/VideoSection"
-// import { CallToAction } from "./blocks/CallToAction"
+import { CallToAction } from "../blocks/CallToAction"
 
 interface CanvasProps {
   blocks: PageBlock[]
   selectedBlockId: string | null
   setSelectedBlockId: (id: string | null) => void
+  previewMode: "desktop" | "mobile"
 }
 
 export function BuilderCanvas({
   blocks,
   selectedBlockId,
   setSelectedBlockId,
+  previewMode,
 }: CanvasProps) {
   const renderBlock = (block: PageBlock) => {
     switch (block.type) {
@@ -20,7 +22,8 @@ export function BuilderCanvas({
         return <HeroBanner block={block} />
       case "VideoSection":
         return <VideoSection block={block} />
-      // case 'CallToAction': return <CallToAction block={block} />
+      case "CallToAction":
+        return <CallToAction block={block} />
       default:
         return (
           <div className="bg-red-50 p-8 text-center text-red-500">
@@ -30,12 +33,17 @@ export function BuilderCanvas({
     }
   }
 
+  const canvasWrapperClass =
+    previewMode === "mobile" ? "max-w-[375px]" : "max-w-[1200px]"
+
   return (
     <div
       className="flex-1 overflow-y-auto bg-gray-200/50 p-4 lg:p-8"
       onClick={() => setSelectedBlockId(null)}
     >
-      <div className="mx-auto flex min-h-[800px] w-full max-w-[1200px] flex-col overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 transition-all">
+      <div
+        className={`mx-auto flex min-h-[800px] w-full flex-col overflow-hidden bg-white shadow-xl ring-1 ring-gray-900/5 transition-all duration-300 ease-in-out ${canvasWrapperClass}`}
+      >
         {blocks.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-gray-400">
             <p>Your page is empty. Add a section from the left menu.</p>

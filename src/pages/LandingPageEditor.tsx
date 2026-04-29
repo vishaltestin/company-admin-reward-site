@@ -1,6 +1,13 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Save, Loader2, ExternalLink } from "lucide-react"
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  ExternalLink,
+  Monitor, // NEW: Desktop icon
+  Smartphone, // NEW: Mobile icon
+} from "lucide-react"
 import {
   useLandingPageDetailQuery,
   useLandingPageMutations,
@@ -12,6 +19,7 @@ import { BuilderNavigator } from "@/components/features/landing-pages/builder/Bu
 import { BuilderCanvas } from "@/components/features/landing-pages/builder/BuilderCanvas"
 import { BuilderInspector } from "@/components/features/landing-pages/builder/BuilderInspector"
 
+// --- 1. THE WRAPPER ---
 export default function LandingPageEditor() {
   const { id } = useParams<{ id: string }>()
   const { data: template, isLoading } = useLandingPageDetailQuery(id)
@@ -29,6 +37,7 @@ export default function LandingPageEditor() {
   return <LandingPageEditorCore template={template} id={id} />
 }
 
+// --- 2. THE CORE ---
 function LandingPageEditorCore({
   template,
   id,
@@ -44,6 +53,11 @@ function LandingPageEditorCore({
     template.status
   )
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
+
+  // NEW: State to track device preview mode
+  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">(
+    "desktop"
+  )
 
   const handleSave = () => {
     updateMutation.mutate({
@@ -63,6 +77,7 @@ function LandingPageEditorCore({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gray-100">
+      {/* --- TOP NAVBAR --- */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-white px-4 shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
@@ -93,6 +108,30 @@ function LandingPageEditorCore({
           </div>
         </div>
 
+        {/* NEW: Device Toggle Controls in the center of the navbar */}
+        <div className="absolute left-1/2 flex -translate-x-1/2 items-center rounded-md border bg-gray-50 p-0.5">
+          <button
+            onClick={() => setPreviewMode("desktop")}
+            className={`flex items-center justify-center rounded px-3 py-1.5 text-xs transition-colors ${
+              previewMode === "desktop"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Monitor className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setPreviewMode("mobile")}
+            className={`flex items-center justify-center rounded px-3 py-1.5 text-xs transition-colors ${
+              previewMode === "mobile"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Smartphone className="h-4 w-4" />
+          </button>
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={() =>
@@ -119,6 +158,7 @@ function LandingPageEditorCore({
         </div>
       </header>
 
+      {/* --- THREE-PANE WORKSPACE --- */}
       <div className="flex flex-1 overflow-hidden">
         <BuilderNavigator
           blocks={blocks}
@@ -130,6 +170,7 @@ function LandingPageEditorCore({
           blocks={blocks}
           selectedBlockId={selectedBlockId}
           setSelectedBlockId={setSelectedBlockId}
+          previewMode={previewMode}
         />
         <BuilderInspector
           blocks={blocks}
