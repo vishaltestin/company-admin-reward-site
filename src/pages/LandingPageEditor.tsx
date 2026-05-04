@@ -55,10 +55,10 @@ function LandingPageEditorCore({
     previewMode,
     blocks,
     globalTheme,
-    pastBlocks, // <-- Pull history state
-    futureBlocks, // <-- Pull history state
-    undo, // <-- Pull undo action
-    redo, // <-- Pull redo action
+    pastBlocks,
+    futureBlocks,
+    undo,
+    redo,
     setStatus,
     setPreviewMode,
     initializeBuilder,
@@ -108,7 +108,7 @@ function LandingPageEditorCore({
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/admin/landing-pages")}
+              onClick={() => navigate("/landing-page-templates")}
               className="rounded p-1.5 hover:bg-gray-100"
             >
               <ArrowLeft className="h-5 w-5 text-gray-600" />

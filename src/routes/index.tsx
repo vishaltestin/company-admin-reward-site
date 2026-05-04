@@ -12,6 +12,8 @@ import TemplateEditor from "@/components/features/email-templates/TemplateEditor
 import LandingPagesPage from "@/pages/LandingPagesPage"
 import LandingPageEditor from "@/pages/LandingPageEditor"
 import LandingPagePreview from "@/pages/LandingPagePreview"
+import PaymentPage from "@/pages/Payment"
+import TransactionHistoryPage from "@/pages/TransactionHistory"
 
 export const router = createBrowserRouter(
   [
@@ -58,6 +60,11 @@ export const router = createBrowserRouter(
                 { path: "/employees", element: <EmployeesPage /> },
                 { path: "/settings", element: <SettingsPage /> },
                 { path: "/email-templates", element: <EmailTemplatesPage /> },
+                { path: "/payment", element: <PaymentPage /> },
+                {
+                  path: "/transaction-history",
+                  element: <TransactionHistoryPage />,
+                },
                 {
                   path: "/landing-page-templates",
                   element: <LandingPagesPage />,
