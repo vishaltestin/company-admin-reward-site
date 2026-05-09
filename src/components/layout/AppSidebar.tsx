@@ -61,8 +61,8 @@ const navItems: NavItem[] = [
     icon: Camera,
     url: "#",
     items: [
-      { title: "Start New Campaign", url: "/create-new-campaign" },
-      { title: "View Campaign", url: "/campaign-list" },
+      { title: "Start New Campaign", url: "/campaign/create" },
+      { title: "View Campaign", url: "/campaigns" },
     ],
   },
   {

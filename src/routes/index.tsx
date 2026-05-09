@@ -14,6 +14,9 @@ import LandingPageEditor from "@/pages/LandingPageEditor"
 import LandingPagePreview from "@/pages/LandingPagePreview"
 import PaymentPage from "@/pages/Payment"
 import TransactionHistoryPage from "@/pages/TransactionHistory"
+import { CampaignWizard } from "@/components/features/campaigns/CampaignWizard"
+import CampaignsList from "@/pages/CampaignsList"
+import CampaignDetails from "@/pages/CampaignDetails"
 
 export const router = createBrowserRouter(
   [
@@ -81,6 +84,13 @@ export const router = createBrowserRouter(
                   path: "/landing-pages/preview/:id",
                   element: <LandingPagePreview />,
                 },
+
+                {
+                  path: "/campaign/create",
+                  element: <CampaignWizard />,
+                },
+                { path: "/campaigns", element: <CampaignsList /> },
+                { path: "/campaign/:id", element: <CampaignDetails /> },
               ],
             },
           ],

@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/store/useAuthStore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// import { UpcomingEventsCalendar } from "@/components/dashboard/UpcomingEventsCalendar" // <-- Import
 
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user)
@@ -35,7 +36,12 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Add more dashboard widgets here */}
+        {/* Add more top-level stats cards here */}
+      </div>
+
+      {/* --- ADD THE BIG CALENDAR HERE --- */}
+      <div className="mt-8">
+        {/* <UpcomingEventsCalendar /> */}
       </div>
     </div>
   )

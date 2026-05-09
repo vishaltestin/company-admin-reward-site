@@ -28,13 +28,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-// ----------------------------------------------------------------------
-// 1. THE INNER FORM (Handles all complex state and logic)
-// ----------------------------------------------------------------------
+
 function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
   const { mutate: saveVisibility, isPending } = useCatalogVisibilityMutation()
 
-  // --- VISIBILITY STATE ---
   const [hiddenCategories, setHiddenCategories] = useState<number[]>(
     data.hidden_category_ids || []
   )
@@ -43,18 +40,14 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
   )
   const [expandedCategories, setExpandedCategories] = useState<number[]>([])
 
-  // --- FILTERING STATE ---
   const [searchQuery, setSearchQuery] = useState("")
   const [minPrice, setMinPrice] = useState<string>("")
   const [maxPrice, setMaxPrice] = useState<string>("")
 
-  // Default to the first root category if available
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(
     data.categories.length > 0 ? data.categories[0].id : null
   )
 
-  // --- LOGIC: HIERARCHY & VISIBILITY ---
-  // Checks if a category is hidden directly, or hidden because its parent is hidden
   const isEffectivelyHidden = (categoryId: number): boolean => {
     if (hiddenCategories.includes(categoryId)) return true
     const category = data.categories.find((c) => c.id === categoryId)
@@ -64,7 +57,6 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     return false
   }
 
-  // Recursively find all child category IDs for a given parent (The "Roll-Up" Engine)
   const getDescendantCategoryIds = (categoryId: number): number[] => {
     let ids = [categoryId]
     const children = data.categories.filter((c) => c.parent_id === categoryId)
@@ -74,7 +66,6 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     return ids
   }
 
-  // --- ACTIONS ---
   const toggleCategory = (categoryId: number) => {
     setHiddenCategories((prev) =>
       prev.includes(categoryId)
@@ -99,7 +90,6 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     )
   }
 
-  // --- BULK ACTIONS ---
   const handleBulkHide = (productIds: number[]) => {
     setHiddenProducts((prev) => Array.from(new Set([...prev, ...productIds])))
   }
@@ -115,7 +105,6 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     })
   }
 
-  // --- TREE VIEW RENDERING COMPONENT ---
   const rootCategories = data.categories.filter(
     (c) =>
       !c.parent_id ||
@@ -164,7 +153,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
                 )}
               </button>
             ) : (
-              <span className="w-6" /> // Placeholder to keep alignment clean
+              <span className="w-6" /> 
             )}
             <span
               className="truncate text-sm font-medium"
@@ -207,33 +196,27 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     )
   }
 
-  // --- PRODUCT ROLL-UP & FILTERING LOGIC ---
   const activeCategory = data.categories.find((c) => c.id === activeCategoryId)
   const isCategoryHiddenState = activeCategoryId
     ? isEffectivelyHidden(activeCategoryId)
     : false
 
-  // Gather, Merge, Deduplicate, and Filter the products
   const filteredProducts = useMemo(() => {
     if (!activeCategoryId) return []
 
-    // 1. Get IDs of the active category AND all its nested subcategories
     const relevantCategoryIds = getDescendantCategoryIds(activeCategoryId)
     const relevantCategories = data.categories.filter((c) =>
       relevantCategoryIds.includes(c.id)
     )
 
-    // 2. Pool all primary and secondary products from those categories
     let pool: CatalogProduct[] = []
     relevantCategories.forEach((cat) => {
       if (cat.primary_products) pool = [...pool, ...cat.primary_products]
       if (cat.secondary_products) pool = [...pool, ...cat.secondary_products]
     })
 
-    // 3. Deduplicate (in case a product is primary in one subcategory and secondary in another)
     const uniquePool = Array.from(new Map(pool.map((p) => [p.id, p])).values())
 
-    // 4. Apply User Filters (Search & Price)
     return uniquePool.filter((p) => {
       const matchesSearch = p.name
         .toLowerCase()
@@ -247,7 +230,6 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     })
   }, [activeCategoryId, data.categories, searchQuery, minPrice, maxPrice])
 
-  // Extract IDs specifically for the Bulk Hide/Show buttons
   const filteredProductIds = filteredProducts.map((p) => p.id)
 
   return (
@@ -270,8 +252,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="grid h-[750px] grid-cols-1 md:grid-cols-12">
-          {/* LEFT PANE: Categories */}
+        <div className="grid h-187.5 grid-cols-1 md:grid-cols-12">
           <div className="space-y-2 overflow-y-auto border-r bg-gray-50/30 p-4 md:col-span-4 lg:col-span-3">
             <h4 className="mb-4 text-xs font-semibold tracking-wider text-gray-500 uppercase">
               Categories
@@ -281,11 +262,9 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
             ))}
           </div>
 
-          {/* RIGHT PANE: Products & Toolbar */}
           <div className="flex flex-col overflow-hidden bg-white md:col-span-8 lg:col-span-9">
             {activeCategory && (
               <>
-                {/* TOOLBAR */}
                 <div className="space-y-4 border-b p-6 pb-4">
                   <div>
                     <h3 className="text-lg font-semibold">
@@ -299,7 +278,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
                   </div>
 
                   <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-gray-50 p-3">
-                    <div className="min-w-[200px] flex-1 space-y-1.5">
+                    <div className="min-w-50 flex-1 space-y-1.5">
                       <Label className="text-xs">Search Products</Label>
                       <div className="relative">
                         <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-gray-400" />
@@ -357,7 +336,6 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
                   </div>
                 </div>
 
-                {/* PRODUCT GRID */}
                 <div className="flex-1 overflow-y-auto bg-gray-50/30 p-6">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {filteredProducts.map((product) => {
@@ -473,9 +451,6 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
   )
 }
 
-// ----------------------------------------------------------------------
-// 2. THE WRAPPER (Handles API Loading & Empty States)
-// ----------------------------------------------------------------------
 export function CatalogCurationForm() {
   const { data, isLoading } = useCatalogConfigQuery()
 
