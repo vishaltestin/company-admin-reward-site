@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm, Controller, type Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -30,10 +29,15 @@ const formSchema = z.object({
 })
 
 type FormValues = z.infer<typeof formSchema>
-
+type RewardeeUser = User & {
+  custom_data?: Record<string, unknown>
+  rewardee_profile?: {
+    vertical_data?: Record<string, unknown>
+  }
+}
 interface RewardeeFormProps {
   verticalSlug: string
-  initialData?: User | null
+  initialData?: RewardeeUser | null
   onSuccess: () => void
   onCancel: () => void
 }
@@ -45,45 +49,33 @@ export function RewardeeForm({
   onCancel,
 }: RewardeeFormProps) {
   const dynamicFields = VERTICAL_FIELDS[verticalSlug] || []
+  const mappedCustomData =
+    initialData?.rewardee_profile?.vertical_data ||
+    initialData?.custom_data ||
+    {}
 
   const {
     register,
     handleSubmit,
     control,
-    reset,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      first_name: "",
-      last_name: "",
-      email: "",
-      mobile: "",
-      custom_data: {},
+      first_name: initialData?.first_name || "",
+      last_name: initialData?.last_name || "",
+      email: initialData?.email || "",
+      mobile: initialData?.mobile || "",
+      custom_data: mappedCustomData,
     },
   })
-
-  useEffect(() => {
-    if (initialData) {
-      reset({
-        first_name: initialData.first_name,
-        last_name: initialData.last_name,
-        email: initialData.email,
-        mobile: initialData.mobile || "",
-        custom_data: initialData.custom_data || {},
-      })
-    }
-  }, [initialData, reset])
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       const payload = { vertical_slug: verticalSlug, ...values }
 
       if (initialData?.id) {
-        const { data } = await api.put(
-          `/employees/${initialData.id}`,
-          payload
-        )
+        const { data } = await api.put(`/employees/${initialData.id}`, payload)
         return data
       } else {
         const { data } = await api.post("/employees", payload)
@@ -190,14 +182,27 @@ export function RewardeeForm({
                   <Controller
                     control={control}
                     name={`custom_data.${config.name}` as Path<FormValues>}
-                    render={({ field: { onChange, value } }) => (
-                      <Select onValueChange={onChange} value={value || ""}>
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={
+                          field.value ? String(field.value) : undefined
+                        }
+                        value={field.value ? String(field.value) : undefined}
+                      >
                         <SelectTrigger id={`dynamic_${config.name}`}>
-                          <SelectValue placeholder="Select an option" />
+                          <SelectValue
+                            placeholder={
+                              config.placeholder || "Select an option"
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {config.options?.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
+                            <SelectItem
+                              key={opt.value}
+                              value={String(opt.value)}
+                            >
                               {opt.label}
                             </SelectItem>
                           ))}

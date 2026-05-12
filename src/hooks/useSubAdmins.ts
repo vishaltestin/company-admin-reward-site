@@ -48,5 +48,17 @@ export const useSubAdminMutations = () => {
     },
   })
 
-  return { saveMutation }
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.delete(`/sub-admins/${id}`)
+      return data
+    },
+    onSuccess: (data) => {
+      toast.success(data.message)
+      invalidate()
+    },
+    onError: () => toast.error("Failed to delete admin."),
+  })
+
+  return { saveMutation, deleteMutation }
 }

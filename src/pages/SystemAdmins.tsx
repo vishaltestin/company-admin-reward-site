@@ -2,7 +2,7 @@ import { useState } from "react"
 import { ShieldCheck, Plus, Edit, Loader2 } from "lucide-react"
 
 import { type User } from "@/store/useAuthStore"
-import { useSubAdminsQuery } from "@/hooks/useSubAdmins"
+import { useSubAdminMutations, useSubAdminsQuery } from "@/hooks/useSubAdmins"
 import { SubAdminForm } from "@/components/admin/SubAdminForm"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,7 @@ import {
 
 export default function SystemAdminsPage() {
   const { data: subAdmins, isLoading } = useSubAdminsQuery()
+  const { deleteMutation } = useSubAdminMutations()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingAdmin, setEditingAdmin] = useState<User | null>(null)
@@ -111,6 +112,21 @@ export default function SystemAdminsPage() {
                       onClick={() => openForm(admin)}
                     >
                       <Edit className="mr-2 h-4 w-4" /> Edit
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => {
+                        if (
+                          confirm("Are you sure you want to delete this admin?")
+                        ) {
+                          deleteMutation.mutate(admin.id)
+                        }
+                      }}
+                    >
+                      Delete
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store/useAuthStore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-// import { UpcomingEventsCalendar } from "@/components/dashboard/UpcomingEventsCalendar" // <-- Import
+import { FullCalendarWidget } from "@/components/dashboard/FullCalendarWidget"
 
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user)
@@ -41,7 +41,7 @@ export default function Dashboard() {
 
       {/* --- ADD THE BIG CALENDAR HERE --- */}
       <div className="mt-8">
-        {/* <UpcomingEventsCalendar /> */}
+        <FullCalendarWidget />
       </div>
     </div>
   )

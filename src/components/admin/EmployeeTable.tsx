@@ -18,6 +18,7 @@ import {
   Edit,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -30,14 +31,18 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface EmployeeTableProps {
   verticalSlug: string
   onEdit: (user: User) => void
+  onPromote: (user: User) => void
 }
 
-export function EmployeeTable({ verticalSlug, onEdit }: EmployeeTableProps) {
+export function EmployeeTable({
+  verticalSlug,
+  onEdit,
+  onPromote,
+}: EmployeeTableProps) {
   const [page, setPage] = useState(1)
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
 
-  // Debounce Search Input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchInput)
@@ -62,7 +67,6 @@ export function EmployeeTable({ verticalSlug, onEdit }: EmployeeTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="relative w-72">
           <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500" />
@@ -78,7 +82,6 @@ export function EmployeeTable({ verticalSlug, onEdit }: EmployeeTableProps) {
         </div>
       </div>
 
-      {/* The Table */}
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader className="bg-gray-50/50">
@@ -145,6 +148,10 @@ export function EmployeeTable({ verticalSlug, onEdit }: EmployeeTableProps) {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Profile
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onPromote(user)}>
+                          <ShieldCheck className="mr-2 h-4 w-4 text-blue-500" />
+                          Promote to Admin
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -155,7 +162,6 @@ export function EmployeeTable({ verticalSlug, onEdit }: EmployeeTableProps) {
         </Table>
       </div>
 
-      {/* Server-Side Pagination Controls */}
       {data && data.last_page > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500">

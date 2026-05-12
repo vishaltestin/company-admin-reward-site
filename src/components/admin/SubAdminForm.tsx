@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react"
 import { type User } from "@/store/useAuthStore"
 import { useSubAdminMutations } from "@/hooks/useSubAdmins"
 import { useVerticalsQuery } from "@/hooks/useVerticals"
+import { usePromoteEmployeeMutation } from "@/hooks/useEmployees"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,17 +28,20 @@ type FormValues = z.infer<typeof formSchema>
 
 interface SubAdminFormProps {
   initialData?: User | null
+  isPromotion?: boolean
   onSuccess: () => void
   onCancel: () => void
 }
 
 export function SubAdminForm({
   initialData,
+  isPromotion = false,
   onSuccess,
   onCancel,
 }: SubAdminFormProps) {
   const { data: verticals } = useVerticalsQuery()
   const { saveMutation } = useSubAdminMutations()
+  const promoteMutation = usePromoteEmployeeMutation()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -65,11 +69,25 @@ export function SubAdminForm({
     }
   }, [initialData, form])
 
+  const isPending = isPromotion
+    ? promoteMutation.isPending
+    : saveMutation.isPending
+
   const onSubmit = (values: FormValues) => {
-    saveMutation.mutate(
-      { id: initialData?.id, data: values },
-      { onSuccess: () => onSuccess() }
-    )
+    if (isPromotion && initialData?.id) {
+      promoteMutation.mutate(
+        {
+          id: initialData.id,
+          data: { managed_vertical_ids: values.managed_vertical_ids },
+        },
+        { onSuccess: () => onSuccess() }
+      )
+    } else {
+      saveMutation.mutate(
+        { id: initialData?.id, data: values },
+        { onSuccess: () => onSuccess() }
+      )
+    }
   }
 
   return (
@@ -77,7 +95,7 @@ export function SubAdminForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>First Name</Label>
-          <Input {...form.register("first_name")} />
+          <Input disabled={isPromotion} {...form.register("first_name")} />
           {form.formState.errors.first_name && (
             <p className="text-sm text-red-500">
               {form.formState.errors.first_name.message}
@@ -86,7 +104,7 @@ export function SubAdminForm({
         </div>
         <div className="space-y-2">
           <Label>Last Name</Label>
-          <Input {...form.register("last_name")} />
+          <Input disabled={isPromotion} {...form.register("last_name")} />
           {form.formState.errors.last_name && (
             <p className="text-sm text-red-500">
               {form.formState.errors.last_name.message}
@@ -154,14 +172,21 @@ export function SubAdminForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isPending}
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={saveMutation.isPending}>
-          {saveMutation.isPending && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          {initialData ? "Save Changes" : "Create Admin"}
+        <Button type="submit" disabled={isPending}>
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPromotion
+            ? "Promote to Admin"
+            : initialData
+              ? "Save Changes"
+              : "Create Admin"}
         </Button>
       </div>
     </form>

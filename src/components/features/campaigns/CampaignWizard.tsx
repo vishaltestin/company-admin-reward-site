@@ -1,4 +1,5 @@
-import { useMemo } from "react"
+import { useMemo, useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import { CheckCircle2 } from "lucide-react"
 import { useCampaignStore } from "@/store/useCampaignStore"
 
@@ -25,7 +26,25 @@ interface StepConfig {
 }
 
 export function CampaignWizard() {
-  const { currentStepIndex, data, setStep } = useCampaignStore()
+  const { currentStepIndex, data, updateData, setStep } = useCampaignStore()
+
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [isHydrated, setIsHydrated] = useState(!location.state?.prefill)
+
+  // 2. HYDRATION LOGIC: Ingest data from EventModal before rendering forms
+  useEffect(() => {
+    if (location.state?.prefill) {
+      updateData(location.state.prefill)
+      setStep(5)
+
+      // CRITICAL UX FIX: Clear the router state immediately so refreshes don't reset progress.
+      navigate(location.pathname, { replace: true, state: {} })
+
+      // FIX: Push the state update to the microtask queue using a Promise.
+      Promise.resolve().then(() => setIsHydrated(true))
+    }
+  }, [location.state, location.pathname, navigate, updateData, setStep])
 
   const steps = useMemo<StepConfig[]>(() => {
     const baseSteps: StepConfig[] = [
@@ -105,7 +124,7 @@ export function CampaignWizard() {
     }
   }
 
-  if (!CurrentStepComponent) return null
+  if (!isHydrated || !CurrentStepComponent) return null
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">

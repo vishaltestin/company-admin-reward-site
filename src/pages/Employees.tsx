@@ -16,6 +16,7 @@ import { Plus, Users, Loader2 } from "lucide-react"
 import { EmployeeTable } from "@/components/admin/EmployeeTable"
 import { RewardeeForm } from "@/components/admin/RewardeeForm"
 import { BulkUpload } from "@/components/admin/BulkUpload"
+import { SubAdminForm } from "@/components/admin/SubAdminForm"
 
 export default function EmployeesPage() {
   const queryClient = useQueryClient()
@@ -29,7 +30,9 @@ export default function EmployeesPage() {
   const [isBulkOpen, setIsBulkOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
-  // Tab State
+  const [isPromoteOpen, setIsPromoteOpen] = useState(false)
+  const [promotingUser, setPromotingUser] = useState<User | null>(null)
+
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
 
   const availableTabs = useMemo(() => {
@@ -60,7 +63,13 @@ export default function EmployeesPage() {
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["employees"] })
     handleFormClose()
+    handlePromoteClose()
     setIsBulkOpen(false)
+  }
+
+  const handlePromoteClose = () => {
+    setIsPromoteOpen(false)
+    setTimeout(() => setPromotingUser(null), 200)
   }
 
   if (isLoadingVerticals) {
@@ -148,6 +157,10 @@ export default function EmployeesPage() {
                   setEditingUser(userData)
                   setIsFormOpen(true)
                 }}
+                onPromote={(userData) => {
+                  setPromotingUser(userData)
+                  setIsPromoteOpen(true)
+                }}
               />
             )}
           </TabsContent>
@@ -190,6 +203,28 @@ export default function EmployeesPage() {
             verticalSlug={currentTab}
             onSuccess={handleSuccess}
             onCancel={() => setIsBulkOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPromoteOpen} onOpenChange={setIsPromoteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Promote to Sub-Admin</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Assign vertical access to promote{" "}
+              <span className="font-semibold">
+                {promotingUser?.first_name} {promotingUser?.last_name}
+              </span>
+              .
+            </p>
+          </DialogHeader>
+
+          <SubAdminForm
+            initialData={promotingUser}
+            isPromotion={true}
+            onSuccess={handleSuccess}
+            onCancel={handlePromoteClose}
           />
         </DialogContent>
       </Dialog>
