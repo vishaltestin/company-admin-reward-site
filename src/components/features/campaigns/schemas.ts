@@ -132,7 +132,9 @@ export const step5BulkSchema = z.object({
     .array(
       z.object({
         product_id: z.number(),
-        variant_id: z.number(),
+        product_name: z.string(),
+        variant_id: z.number().nullable().optional(),
+        variant_name: z.string().nullable().optional(),
         quantity: z.number().min(1),
       })
     )

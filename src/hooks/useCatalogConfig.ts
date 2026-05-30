@@ -3,14 +3,29 @@ import { api } from "@/lib/axios"
 import { toast } from "sonner"
 import { AxiosError } from "axios"
 import { useAuthStore, type User } from "@/store/useAuthStore"
+export interface CatalogVariant {
+  id: number
+  name: string
+  sku: string
+  image_url: string | null
+  mrp: number
+  selling_price: number
+}
 
 export interface CatalogProduct {
   id: number
   category_id: number
   name: string
   main_image: string | null
-  selling_price: string | number
-  mrp: string | number
+  selling_price: number
+  mrp: number
+  has_variants?: boolean
+  variants?: CatalogVariant[]
+  tier_prices?: {
+    variant_id: number | null
+    min_quantity: number
+    selling_price: number
+  }[]
 }
 
 export interface CatalogCategory {

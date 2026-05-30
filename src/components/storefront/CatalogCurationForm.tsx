@@ -28,7 +28,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-
 function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
   const { mutate: saveVisibility, isPending } = useCatalogVisibilityMutation()
 
@@ -153,7 +152,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
                 )}
               </button>
             ) : (
-              <span className="w-6" /> 
+              <span className="w-6" />
             )}
             <span
               className="truncate text-sm font-medium"
@@ -357,7 +356,8 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
                           <div className="mb-3 flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border bg-white">
                             {product.main_image ? (
                               <img
-                                src={`${import.meta.env.VITE_BACKEND_URL}/storage/${product.main_image}`}
+                                // src={`${import.meta.env.VITE_BACKEND_URL}/storage/${product.main_image}`}
+                                src={product.main_image}
                                 alt={product.name}
                                 className="h-full w-full object-contain p-2"
                               />

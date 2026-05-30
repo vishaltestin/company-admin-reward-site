@@ -30,6 +30,8 @@ import { step5BulkSchema, type Step5BulkData } from "../schemas"
 import {
   useCatalogConfigQuery,
   type CatalogCategory,
+  type CatalogProduct,
+  type CatalogVariant,
 } from "@/hooks/useCatalogConfig"
 
 export function Step5BulkCatalog() {
@@ -42,8 +44,9 @@ export function Step5BulkCatalog() {
   )
   const [expandedCategories, setExpandedCategories] = useState<number[]>([])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [activeProduct, setActiveProduct] = useState<any | null>(null)
+  const [activeProduct, setActiveProduct] = useState<CatalogProduct | null>(
+    null
+  )
   const [modalQuantities, setModalQuantities] = useState<
     Record<number, number>
   >({})
@@ -58,7 +61,6 @@ export function Step5BulkCatalog() {
     defaultValues: { bulk_items: storeData.bulk_items || [] },
   })
 
-  // const bulkItems = watch("bulk_items")
   const bulkItems = useWatch({ control, name: "bulk_items" })
 
   const getDescendantCategoryIds = (categoryId: number): number[] => {
@@ -108,12 +110,11 @@ export function Step5BulkCatalog() {
     return products
   }, [catalogConfig, selectedCategoryId, search])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const openProductModal = (product: any) => {
+  const openProductModal = (product: CatalogProduct) => {
     const existingSelections: Record<number, number> = {}
     bulkItems.forEach((item) => {
       if (item.product_id === product.id) {
-        existingSelections[item.variant_id] = item.quantity
+        existingSelections[item.variant_id || 0] = item.quantity
       }
     })
     setModalQuantities(existingSelections)
@@ -135,11 +136,28 @@ export function Step5BulkCatalog() {
       (item) => item.product_id !== activeProduct.id
     )
 
-    Object.entries(modalQuantities).forEach(([variantId, qty]) => {
+    Object.entries(modalQuantities).forEach(([variantIdStr, qty]) => {
       if (qty > 0) {
+        const variantId = Number(variantIdStr)
+        const finalVariantId = variantId === 0 ? null : variantId
+
+        let variantName = null
+        if (
+          activeProduct.variants &&
+          activeProduct.variants.length > 0 &&
+          finalVariantId
+        ) {
+          const variant = activeProduct.variants.find(
+            (v) => v.id === finalVariantId
+          )
+          if (variant) variantName = variant.name
+        }
+
         newCart.push({
           product_id: activeProduct.id,
-          variant_id: Number(variantId),
+          product_name: activeProduct.name,
+          variant_id: finalVariantId,
+          variant_name: variantName,
           quantity: qty,
         })
       }
@@ -392,50 +410,52 @@ export function Step5BulkCatalog() {
                     <div className="max-h-62.5 divide-y overflow-y-auto">
                       {activeProduct.variants &&
                       activeProduct.variants.length > 0 ? (
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        activeProduct.variants.map((variant: any) => (
-                          <div
-                            key={variant.id}
-                            className="grid grid-cols-12 items-center gap-2 p-3 hover:bg-gray-50"
-                          >
-                            <div className="col-span-7">
-                              <p className="text-sm font-semibold">
-                                {variant.name}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                SKU: {variant.sku}
-                              </p>
+                        activeProduct.variants.map(
+                          (variant: CatalogVariant) => (
+                            <div
+                              key={variant.id}
+                              className="grid grid-cols-12 items-center gap-2 p-3 hover:bg-gray-50"
+                            >
+                              <div className="col-span-7">
+                                <p className="text-sm font-semibold">
+                                  {variant.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  SKU: {variant.sku}
+                                </p>
+                              </div>
+                              <div className="col-span-5 flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    handleModalQuantityChange(variant.id, -1)
+                                  }
+                                  disabled={!modalQuantities[variant.id]}
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center text-sm font-bold">
+                                  {modalQuantities[variant.id] || 0}{" "}
+                                  {/* <-- variant.id */}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    handleModalQuantityChange(variant.id, 1)
+                                  }
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="col-span-5 flex items-center justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() =>
-                                  handleModalQuantityChange(variant.id, -1)
-                                }
-                                disabled={!modalQuantities[variant.id]}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="w-8 text-center text-sm font-bold">
-                                {modalQuantities[variant.id] || 0}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() =>
-                                  handleModalQuantityChange(variant.id, 1)
-                                }
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))
+                          )
+                        )
                       ) : (
                         <div className="grid grid-cols-12 items-center gap-2 p-3 hover:bg-gray-50">
                           <div className="col-span-7">
@@ -449,24 +469,20 @@ export function Step5BulkCatalog() {
                               variant="outline"
                               size="icon"
                               className="h-7 w-7"
-                              onClick={() =>
-                                handleModalQuantityChange(activeProduct.id, -1)
-                              }
-                              disabled={!modalQuantities[activeProduct.id]}
+                              onClick={() => handleModalQuantityChange(0, -1)}
+                              disabled={!modalQuantities[0]}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
                             <span className="w-8 text-center text-sm font-bold">
-                              {modalQuantities[activeProduct.id] || 0}
+                              {modalQuantities[0] || 0}
                             </span>
                             <Button
                               type="button"
                               variant="outline"
                               size="icon"
                               className="h-7 w-7"
-                              onClick={() =>
-                                handleModalQuantityChange(activeProduct.id, 1)
-                              }
+                              onClick={() => handleModalQuantityChange(0, 1)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>

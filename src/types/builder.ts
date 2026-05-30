@@ -57,6 +57,24 @@ export interface CallToActionBlock extends BaseBlock {
   }
 }
 
-export type PageBlock = HeroBannerBlock | VideoSectionBlock | CallToActionBlock
+export interface RewardSelectorBlock extends BaseBlock {
+  type: "RewardSelector"
+  variant: "grid" | "list"
+  content: {
+    heading: string
+    subtext: string
+  }
+  styles: {
+    backgroundColor: string
+    headingColor: string
+    cardBackgroundColor: string
+  }
+}
+
+export type PageBlock =
+  | HeroBannerBlock
+  | VideoSectionBlock
+  | CallToActionBlock
+  | RewardSelectorBlock
 
 export type BlockType = PageBlock["type"]

@@ -129,9 +129,12 @@ export default function CampaignsList() {
                   </TableCell>
                   <TableCell>{campaign.vertical?.name || "—"}</TableCell>
                   <TableCell>
-                    {campaign.budget_locked > 0 ? (
+                    {campaign.budget_locked ? (
                       <span className="font-semibold text-gray-900">
-                        ₹{Number(campaign.budget_locked).toLocaleString()}
+                        ₹
+                        {Math.abs(
+                          Number(campaign.budget_locked)
+                        ).toLocaleString()}
                       </span>
                     ) : (
                       <span className="text-gray-400">Quote Req.</span>

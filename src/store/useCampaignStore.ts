@@ -23,7 +23,13 @@ export interface CampaignDraftData {
   event_address?: string
   event_date?: string
   inquiry_notes?: string
-  bulk_items?: { product_id: number; variant_id: number; quantity: number }[]
+  bulk_items?: {
+    product_id: number
+    product_name: string
+    variant_id?: number | null
+    variant_name?: string | null
+    quantity: number
+  }[]
 }
 interface CampaignStore {
   data: CampaignDraftData

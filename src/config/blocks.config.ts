@@ -2,6 +2,7 @@ import {
   LayoutTemplate,
   PlaySquare,
   MousePointerClick,
+  Gift,
   type LucideIcon,
 } from "lucide-react"
 
@@ -200,6 +201,48 @@ export const BLOCK_CONFIGS: Record<string, BlockConfig> = {
         headingColor: "",
         buttonBgColor: "",
         buttonTextColor: "",
+      },
+    },
+  },
+
+  GiftSelector: {
+    type: "RewardSelector",
+    label: "Gift Selector",
+    icon: Gift,
+    variants: [
+      { label: "3-Column Grid", value: "grid" },
+      { label: "Vertical List", value: "list" },
+    ],
+    fields: {
+      content: [
+        {
+          name: "heading",
+          label: "Section Heading",
+          type: "text",
+          placeholder: "Choose your gift",
+        },
+        { name: "subtext", label: "Subtext", type: "textarea" },
+      ],
+      styles: [
+        { name: "backgroundColor", label: "Background Color", type: "color" },
+        { name: "headingColor", label: "Heading Color", type: "color" },
+        {
+          name: "cardBackgroundColor",
+          label: "Card Background",
+          type: "color",
+        },
+      ],
+    },
+    defaultData: {
+      variant: "grid",
+      content: {
+        heading: "Choose Your Reward",
+        subtext: "Select one of the curated gifts below.",
+      },
+      styles: {
+        backgroundColor: "transparent",
+        headingColor: "",
+        cardBackgroundColor: "#ffffff",
       },
     },
   },

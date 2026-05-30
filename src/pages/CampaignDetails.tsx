@@ -33,6 +33,8 @@ import {
 interface BulkItem {
   product_id: string | number
   variant_id: string | number
+  product_name: string
+  variant_name: string
   quantity: number
 }
 interface DetailRowProps {
@@ -344,8 +346,8 @@ export default function CampaignDetails() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 font-medium text-gray-500">
                     <tr>
-                      <th className="px-6 py-3">Product ID</th>
-                      <th className="px-6 py-3">Variant ID</th>
+                      <th className="px-6 py-3">Product</th>
+                      <th className="px-6 py-3">Variant</th>
                       <th className="px-6 py-3 text-right">Requested Qty</th>
                     </tr>
                   </thead>
@@ -353,8 +355,8 @@ export default function CampaignDetails() {
                     {/* 5. Fixed 'any' in map */}
                     {config.bulk_items?.map((item: BulkItem, idx: number) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
-                        <td className="px-6 py-3">{item.product_id}</td>
-                        <td className="px-6 py-3">{item.variant_id}</td>
+                        <td className="px-6 py-3">{item.product_name}</td>
+                        <td className="px-6 py-3">{item.variant_name}</td>
                         <td className="px-6 py-3 text-right font-bold">
                           {item.quantity}
                         </td>
