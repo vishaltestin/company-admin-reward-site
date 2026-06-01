@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { api } from "@/lib/axios"
+import { api, getApiErrorMessage } from "@/lib/axios"
 import { toast } from "sonner"
 
 // ==========================================
@@ -149,8 +149,8 @@ export const useTemplateMutations = () => {
       toast.success("Template saved successfully!")
       queryClient.invalidateQueries({ queryKey: ["email-templates"] })
     },
-    onError: () => {
-      toast.error("Failed to save template.")
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error))
     },
   })
 

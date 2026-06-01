@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { api } from "@/lib/axios"
+import { api, getApiErrorMessage } from "@/lib/axios"
 import { toast } from "sonner"
 import type { PageBlock } from "@/types/builder"
 
@@ -139,8 +139,8 @@ export const useLandingPageMutations = () => {
       toast.success("Landing page saved successfully!")
       queryClient.invalidateQueries({ queryKey: ["landing-pages"] })
     },
-    onError: () => {
-      toast.error("Failed to save landing page.")
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error))
     },
   })
 

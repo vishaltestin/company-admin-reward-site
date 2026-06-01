@@ -22,7 +22,7 @@ interface Campaign {
   vertical?: {
     name: string
   }
-  budget_locked: number
+  total_budget: number
   status: string
 }
 
@@ -75,7 +75,7 @@ export default function CampaignsList() {
             Manage your reward programs and wholesale inquiries.
           </p>
         </div>
-        <Button onClick={() => navigate("/campaigns/create")}>
+        <Button onClick={() => navigate("/campaign/create")}>
           <Plus className="mr-2 h-4 w-4" /> New Campaign
         </Button>
       </div>
@@ -129,11 +129,11 @@ export default function CampaignsList() {
                   </TableCell>
                   <TableCell>{campaign.vertical?.name || "—"}</TableCell>
                   <TableCell>
-                    {campaign.budget_locked ? (
+                    {campaign.total_budget ? (
                       <span className="font-semibold text-gray-900">
                         ₹
                         {Math.abs(
-                          Number(campaign.budget_locked)
+                          Number(campaign.total_budget)
                         ).toLocaleString()}
                       </span>
                     ) : (

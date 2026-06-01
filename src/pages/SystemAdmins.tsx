@@ -21,6 +21,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function SystemAdminsPage() {
   const { data: subAdmins, isLoading } = useSubAdminsQuery()
@@ -28,6 +37,8 @@ export default function SystemAdminsPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingAdmin, setEditingAdmin] = useState<User | null>(null)
+
+  const [adminToDelete, setAdminToDelete] = useState<User | null>(null)
 
   const openForm = (admin: User | null = null) => {
     setEditingAdmin(admin)
@@ -39,9 +50,20 @@ export default function SystemAdminsPage() {
     setTimeout(() => setEditingAdmin(null), 200)
   }
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    if (adminToDelete) {
+      deleteMutation.mutate(adminToDelete.id, {
+        onSuccess: () => {
+          setAdminToDelete(null)
+        },
+      })
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -114,17 +136,12 @@ export default function SystemAdminsPage() {
                       <Edit className="mr-2 h-4 w-4" /> Edit
                     </Button>
 
+                    {/* Standard button that triggers the shared Alert Dialog */}
                     <Button
                       variant="ghost"
                       size="sm"
                       className="text-red-500 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => {
-                        if (
-                          confirm("Are you sure you want to delete this admin?")
-                        ) {
-                          deleteMutation.mutate(admin.id)
-                        }
-                      }}
+                      onClick={() => setAdminToDelete(admin)}
                     >
                       Delete
                     </Button>
@@ -151,6 +168,45 @@ export default function SystemAdminsPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Shared Delete Alert Dialog */}
+      <AlertDialog
+        open={!!adminToDelete}
+        onOpenChange={(open) => !open && setAdminToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete{" "}
+              <span className="font-semibold text-gray-900">
+                {adminToDelete?.first_name} {adminToDelete?.last_name}
+              </span>
+              's account and remove their access to the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

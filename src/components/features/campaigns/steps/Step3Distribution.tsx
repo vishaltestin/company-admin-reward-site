@@ -51,7 +51,7 @@ export function Step3Distribution() {
           </p>
         </div>
 
-        <div className="grid max-w-3xl gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           <div
             onClick={() =>
               setValue("distribution_type", "online", { shouldValidate: true })

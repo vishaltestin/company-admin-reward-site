@@ -227,6 +227,14 @@ export default function CampaignDetails() {
                     </span>
                   }
                 />
+                <DetailRow
+                  label="Total Budget"
+                  value={
+                    <span className="font-bold text-green-600">
+                      ₹{Number(campaign.total_budget).toLocaleString()}
+                    </span>
+                  }
+                />
               </>
             ) : (
               <>

@@ -47,17 +47,14 @@ const EVENT_TYPE_OPTIONS = [
 export function FullCalendarWidget() {
   const user = useAuthStore((state) => state.user)
 
-  // States
   const [currentDate, setCurrentDate] = useState(new Date())
   const [currentView, setCurrentView] = useState<CalendarView>("monthly")
   const [verticalFilter, setVerticalFilter] = useState<string>("all")
   const [eventFilter, setEventFilter] = useState<string>("all")
 
-  // Modal State
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // 1. RBAC Vertical Filter
   const { data: dbVerticals } = useVerticalsQuery()
   const availableVerticals = useMemo(() => {
     if (!user || !dbVerticals) return []
@@ -66,20 +63,17 @@ export function FullCalendarWidget() {
     return dbVerticals.filter((v) => user.managed_vertical_ids.includes(v.id))
   }, [user, dbVerticals])
 
-  // 2. Fetch Events
   const { data: apiEvents = [], isLoading } = useCalendarEventsQuery({
     year: currentDate.getFullYear(),
     month: currentDate.getMonth() + 1,
     vertical_slug: verticalFilter !== "all" ? verticalFilter : undefined,
   })
 
-  
   const events = useMemo(() => {
     if (eventFilter === "all") return apiEvents
     return apiEvents.filter((e) => e.type === eventFilter)
   }, [apiEvents, eventFilter])
 
-  // 4. Date Math for Views
   const calendarDays = useMemo(() => {
     if (currentView === "monthly") {
       const year = currentDate.getFullYear()
@@ -100,11 +94,9 @@ export function FullCalendarWidget() {
       return Array.from({ length: 7 }).map((_, i) => addDays(start, i))
     }
 
-    // Daily
     return [currentDate]
   }, [currentDate, currentView])
 
-  // Navigation Handlers
   const handlePrev = () => {
     const newDate = new Date(currentDate)
     if (currentView === "monthly") newDate.setMonth(newDate.getMonth() - 1)
@@ -135,7 +127,6 @@ export function FullCalendarWidget() {
     return "bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200"
   }
 
-  // Determine Title Text
   const headerTitle = useMemo(() => {
     if (currentView === "daily") return format(currentDate, "MMMM do, yyyy")
     if (currentView === "weekly") {
@@ -145,14 +136,12 @@ export function FullCalendarWidget() {
     return format(currentDate, "MMMM yyyy")
   }, [currentDate, currentView])
 
-
   return (
     <>
-      <Card className="col-span-full shadow-sm">
-        {/* --- HEADER CONTROLS --- */}
-        <CardHeader className="flex flex-col gap-4 border-b bg-gradient-to-r from-white to-blue-50/30 pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <Card className="col-span-full font-grotest shadow-sm">
+        <CardHeader className="flex flex-col gap-4 border-b bg-linear-to-r from-white to-blue-50/30 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col">
-            <CardTitle className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-2xl text-transparent">
+            <CardTitle className="flex items-center gap-2 bg-linear-to-r from-blue-600 to-blue-800 bg-clip-text text-2xl text-transparent">
               <CalendarIcon className="h-6 w-6 text-blue-600" />
               Calendar
             </CardTitle>
@@ -162,7 +151,6 @@ export function FullCalendarWidget() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* View Switcher */}
             <Tabs
               value={currentView}
               onValueChange={(v) => setCurrentView(v as CalendarView)}
@@ -174,9 +162,8 @@ export function FullCalendarWidget() {
               </TabsList>
             </Tabs>
 
-            {/* Event Filter */}
             <Select value={eventFilter} onValueChange={setEventFilter}>
-              <SelectTrigger className="h-9 w-[150px]">
+              <SelectTrigger className="h-9 w-37.5">
                 <SelectValue placeholder="All Events" />
               </SelectTrigger>
               <SelectContent>
@@ -188,9 +175,8 @@ export function FullCalendarWidget() {
               </SelectContent>
             </Select>
 
-            {/* Vertical/Network Filter */}
             <Select value={verticalFilter} onValueChange={setVerticalFilter}>
-              <SelectTrigger className="h-9 w-[160px]">
+              <SelectTrigger className="h-9 w-40">
                 <SelectValue placeholder="All Networks" />
               </SelectTrigger>
               <SelectContent>
@@ -203,7 +189,6 @@ export function FullCalendarWidget() {
               </SelectContent>
             </Select>
 
-            {/* Prev / Today / Next */}
             <div className="ml-auto flex items-center gap-1 lg:ml-2">
               <Button
                 variant="outline"
@@ -235,15 +220,13 @@ export function FullCalendarWidget() {
           </div>
         </CardHeader>
 
-        {/* --- CALENDAR BODY --- */}
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6">
-              <Skeleton className="h-[500px] w-full rounded-lg" />
+              <Skeleton className="h-125 w-full rounded-lg" />
             </div>
           ) : (
             <>
-              {/* MONTHLY VIEW */}
               {currentView === "monthly" && (
                 <>
                   <div className="grid grid-cols-7 border-b bg-muted/10">
@@ -269,7 +252,7 @@ export function FullCalendarWidget() {
                         <div
                           key={index}
                           className={cn(
-                            "min-h-[120px] border-r border-b p-1.5 sm:p-2",
+                            "min-h-30 border-r border-b p-1.5 sm:p-2",
                             !day && "bg-muted/20",
                             isToday && "bg-blue-50/40"
                           )}
@@ -286,7 +269,7 @@ export function FullCalendarWidget() {
                               >
                                 {day.getDate()}
                               </div>
-                              <div className="no-scrollbar max-h-[85px] space-y-1 overflow-y-auto">
+                              <div className="no-scrollbar max-h-21.25 space-y-1 overflow-y-auto">
                                 {dayEvents.map((event) => (
                                   <div
                                     key={event.id}
@@ -310,7 +293,6 @@ export function FullCalendarWidget() {
                 </>
               )}
 
-              {/* WEEKLY VIEW */}
               {currentView === "weekly" && (
                 <>
                   <div className="grid grid-cols-7 border-b bg-muted/10">
@@ -342,7 +324,7 @@ export function FullCalendarWidget() {
                       )
                     })}
                   </div>
-                  <div className="grid min-h-[400px] grid-cols-7">
+                  <div className="grid min-h-100 grid-cols-7">
                     {calendarDays.map((day, index) => {
                       if (!day) return null
                       const dayEvents = events.filter((e) =>
@@ -384,9 +366,8 @@ export function FullCalendarWidget() {
                 </>
               )}
 
-              {/* DAILY VIEW */}
               {currentView === "daily" && (
-                <div className="min-h-[400px] bg-white p-6">
+                <div className="min-h-100 bg-white p-6">
                   <h3 className="mb-4 flex items-center text-sm font-medium text-muted-foreground">
                     <Clock className="mr-2 h-4 w-4 text-blue-500" />
                     All Events Scheduled

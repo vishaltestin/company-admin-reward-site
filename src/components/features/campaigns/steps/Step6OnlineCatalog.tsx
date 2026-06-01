@@ -68,14 +68,24 @@ export function Step6OnlineCatalog() {
       </div>
     )
   }
+  const hiddenCategoryIds = new Set(catalogConfig?.hidden_category_ids ?? [])
+  const hiddenProductIds = new Set(catalogConfig?.hidden_product_ids ?? [])
 
   const allAvailableProducts =
     catalogConfig?.categories
+      .filter((category) => !hiddenCategoryIds.has(category.id))
       .flatMap((c) => [
         ...(c.primary_products || []),
         ...(c.secondary_products || []),
       ])
-      .filter((p) => !catalogConfig.hidden_product_ids?.includes(p.id)) || []
+      .filter((p) => !hiddenProductIds.has(p.id)) || []
+  // const allAvailableProducts =
+  //   catalogConfig?.categories
+  //     .flatMap((c) => [
+  //       ...(c.primary_products || []),
+  //       ...(c.secondary_products || []),
+  //     ])
+  //     .filter((p) => !catalogConfig.hidden_product_ids?.includes(p.id)) || []
 
   const uniqueProducts = Array.from(
     new Map(allAvailableProducts.map((p) => [p.id, p])).values()

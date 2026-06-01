@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Copy, Edit, LayoutTemplate, Trash2 } from "lucide-react"
+import { Copy, Edit, LayoutTemplate, Trash2, Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import {
   useLandingPageMutations,
@@ -13,6 +13,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,22 +39,16 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
     useState<LandingPageTemplate | null>(null)
   const [duplicateForm, setDuplicateForm] = useState({ name: "", title: "" })
 
+  const [templateToDelete, setTemplateToDelete] = useState<{
+    id: number
+    name: string
+  } | null>(null)
+
   const { data: templates, isLoading } = useLandingPagesQuery(
     selectedEventId,
     activeTab
   )
   const { duplicateMutation, deleteMutation } = useLandingPageMutations()
-
-  if (!selectedEventId) {
-    return (
-      <div className="flex flex-1 items-center justify-center bg-gray-50">
-        <div className="text-center text-gray-500">
-          <LayoutTemplate className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-          <p>Select an event from the sidebar to view landing pages.</p>
-        </div>
-      </div>
-    )
-  }
 
   const handleDuplicateClick = (template: LandingPageTemplate) => {
     setTemplateToDuplicate(template)
@@ -70,6 +73,29 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
           setActiveTab("variations")
         },
       }
+    )
+  }
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    if (templateToDelete) {
+      deleteMutation.mutate(templateToDelete.id, {
+        onSuccess: () => {
+          setTemplateToDelete(null)
+        },
+      })
+    }
+  }
+
+  if (!selectedEventId) {
+    return (
+      <div className="flex flex-1 items-center justify-center bg-gray-50">
+        <div className="text-center text-gray-500">
+          <LayoutTemplate className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+          <p>Select an event from the sidebar to view landing pages.</p>
+        </div>
+      </div>
     )
   }
 
@@ -156,9 +182,7 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
                       <>
                         <button
                           onClick={() =>
-                            navigate(
-                              `/landing-pages/editor/${template.id}`
-                            )
+                            navigate(`/landing-pages/editor/${template.id}`)
                           }
                           className="flex flex-1 items-center justify-center gap-2 rounded-md bg-gray-900 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
                         >
@@ -166,15 +190,12 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
                           Open Builder
                         </button>
                         <button
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Are you sure you want to delete this page?"
-                              )
-                            ) {
-                              deleteMutation.mutate(template.id)
-                            }
-                          }}
+                          onClick={() =>
+                            setTemplateToDelete({
+                              id: template.id,
+                              name: template.name,
+                            })
+                          }
                           className="ml-2 rounded-md p-2 text-red-500 transition-colors hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -240,6 +261,44 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!templateToDelete}
+        onOpenChange={(open) => !open && setTemplateToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the{" "}
+              <span className="font-semibold text-gray-900">
+                {templateToDelete?.name}
+              </span>{" "}
+              landing page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

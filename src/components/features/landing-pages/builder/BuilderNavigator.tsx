@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   Eye,
   EyeOff,
@@ -10,6 +11,17 @@ import { useBuilderStore } from "@/store/useBuilderStore"
 import { type PageBlock, type BlockType } from "@/types/builder"
 import { AVAILABLE_BLOCKS } from "@/config/blocks.config"
 
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 export function BuilderNavigator() {
   const {
     blocks,
@@ -21,11 +33,15 @@ export function BuilderNavigator() {
     toggleBlockVisibility,
   } = useBuilderStore()
 
+  const [blockToDelete, setBlockToDelete] = useState<{
+    id: string
+    name: string
+  } | null>(null)
+
   const handleAddBlock = (blockType: BlockType) => {
     const config = AVAILABLE_BLOCKS.find((b) => b.type === blockType)
     if (!config) return
 
-    // Every property is explicitly mapped to ensure no 'any' types creep in
     const newBlock: PageBlock = {
       id: crypto.randomUUID(),
       type: config.type,
@@ -36,6 +52,13 @@ export function BuilderNavigator() {
     } as PageBlock
 
     addBlock(newBlock)
+  }
+
+  const handleConfirmDelete = () => {
+    if (blockToDelete) {
+      deleteBlock(blockToDelete.id)
+      setBlockToDelete(null)
+    }
   }
 
   return (
@@ -79,6 +102,7 @@ export function BuilderNavigator() {
             {blocks.map((block, index) => {
               const config = AVAILABLE_BLOCKS.find((b) => b.type === block.type)
               const isSelected = selectedBlockId === block.id
+              const blockName = config?.label || block.type
 
               return (
                 <div
@@ -105,7 +129,7 @@ export function BuilderNavigator() {
                       )}
                     </button>
                     <span className="truncate text-sm font-medium text-gray-700">
-                      {config?.label || block.type}
+                      {blockName}
                     </span>
                   </div>
 
@@ -135,9 +159,7 @@ export function BuilderNavigator() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (window.confirm("Remove this section?")) {
-                          deleteBlock(block.id)
-                        }
+                        setBlockToDelete({ id: block.id, name: blockName })
                       }}
                       className="ml-1 rounded p-1.5 text-gray-400 hover:bg-red-100 hover:text-red-600"
                     >
@@ -150,6 +172,31 @@ export function BuilderNavigator() {
           </div>
         )}
       </div>
+
+      <AlertDialog
+        open={!!blockToDelete}
+        onOpenChange={(open) => !open && setBlockToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this section?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove the{" "}
+              <span className="font-semibold text-gray-900">
+                {blockToDelete?.name}
+              </span>{" "}
+              section? This action will immediately remove it from your page
+              structure.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Remove
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

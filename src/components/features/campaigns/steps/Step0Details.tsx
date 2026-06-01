@@ -60,7 +60,7 @@ export function Step0Details() {
           </p>
         </div>
 
-        <div className="max-w-2xl space-y-4">
+        <div className="space-y-6">
           <div className="space-y-2">
             <Label
               htmlFor="name"
@@ -92,7 +92,6 @@ export function Step0Details() {
         </div>
       </div>
 
-      {/* Local Navigation Controls */}
       <div className="flex justify-end border-t pt-4">
         <Button type="submit">
           Continue <ChevronRight className="ml-2 h-4 w-4" />

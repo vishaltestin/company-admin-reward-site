@@ -1,8 +1,19 @@
 import { useState } from "react"
-import { Copy, Edit, Mail, Trash2, Eye } from "lucide-react"
+import { Copy, Edit, Mail, Trash2, Eye, Loader2 } from "lucide-react"
 import { useTemplateMutations, useTemplatesQuery } from "@/hooks/templates"
 import { useNavigate } from "react-router-dom"
 import { TemplatePreviewModal } from "./TemplatePreviewModal"
+
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface GridProps {
   selectedEventId: number | null
@@ -11,6 +22,12 @@ interface GridProps {
 export function TemplateGrid({ selectedEventId }: GridProps) {
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
   const [previewId, setPreviewId] = useState<string | null>(null)
+
+  const [templateToDelete, setTemplateToDelete] = useState<{
+    id: number
+    name: string
+  } | null>(null)
+
   const navigate = useNavigate()
 
   const { data: templates, isLoading } = useTemplatesQuery(
@@ -18,6 +35,18 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
     activeTab
   )
   const { duplicateMutation, deleteMutation } = useTemplateMutations()
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    if (templateToDelete) {
+      deleteMutation.mutate(templateToDelete.id, {
+        onSuccess: () => {
+          setTemplateToDelete(null)
+        },
+      })
+    }
+  }
 
   if (!selectedEventId) {
     return (
@@ -32,7 +61,6 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50/30">
-      {/* Tab Header */}
       <div className="flex space-x-6 border-b bg-white px-8 pt-6">
         <button
           onClick={() => setActiveTab("global")}
@@ -56,7 +84,6 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
         </button>
       </div>
 
-      {/* Grid Content */}
       <div className="flex-1 overflow-y-auto p-8">
         {isLoading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -78,7 +105,6 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                 key={template.id}
                 className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                {/* Thumbnail Area */}
                 <div className="group relative flex h-40 items-center justify-center overflow-hidden border-b bg-gray-100">
                   {template.thumbnail_path ? (
                     <img
@@ -100,7 +126,6 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                   </div>
                 </div>
 
-                {/* Info Area */}
                 <div className="flex flex-1 flex-col p-4">
                   <h4 className="line-clamp-1 font-semibold text-gray-800">
                     {template.name}
@@ -109,7 +134,6 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                     Subj: {template.subject}
                   </p>
 
-                  {/* Actions */}
                   <div className="mt-4 flex items-center justify-between border-t pt-4">
                     {activeTab === "global" ? (
                       <button
@@ -134,15 +158,12 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                           Edit Design
                         </button>
                         <button
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Are you sure you want to delete this variation?"
-                              )
-                            ) {
-                              deleteMutation.mutate(template.id)
-                            }
-                          }}
+                          onClick={() =>
+                            setTemplateToDelete({
+                              id: template.id,
+                              name: template.name,
+                            })
+                          }
                           className="ml-2 rounded-md p-2 text-red-500 transition-colors hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -156,7 +177,46 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
           </div>
         )}
       </div>
+
       <TemplatePreviewModal id={previewId} onClose={() => setPreviewId(null)} />
+
+      <AlertDialog
+        open={!!templateToDelete}
+        onOpenChange={(open) => !open && setTemplateToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the{" "}
+              <span className="font-semibold text-gray-900">
+                {templateToDelete?.name}
+              </span>{" "}
+              template variation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -32,16 +32,13 @@ export function CampaignWizard() {
   const navigate = useNavigate()
   const [isHydrated, setIsHydrated] = useState(!location.state?.prefill)
 
-  // 2. HYDRATION LOGIC: Ingest data from EventModal before rendering forms
   useEffect(() => {
     if (location.state?.prefill) {
       updateData(location.state.prefill)
       setStep(5)
 
-      // CRITICAL UX FIX: Clear the router state immediately so refreshes don't reset progress.
       navigate(location.pathname, { replace: true, state: {} })
 
-      // FIX: Push the state update to the microtask queue using a Promise.
       Promise.resolve().then(() => setIsHydrated(true))
     }
   }, [location.state, location.pathname, navigate, updateData, setStep])
@@ -127,7 +124,7 @@ export function CampaignWizard() {
   if (!isHydrated || !CurrentStepComponent) return null
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8 font-grotest">
       <div className="flex items-center justify-start gap-4 overflow-x-auto rounded-lg border bg-white px-6 py-4 shadow-sm">
         {steps.map((step, index) => {
           const isActive = index === currentStepIndex

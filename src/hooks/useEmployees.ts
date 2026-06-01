@@ -56,12 +56,29 @@ export const usePromoteEmployeeMutation = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message)
-      // Invalidate both lists so the user disappears from Employees and appears in System Admins
       queryClient.invalidateQueries({ queryKey: ["employees"] })
       queryClient.invalidateQueries({ queryKey: ["subAdmins"] })
     },
     onError: (error: AxiosError<{ message: string }>) => {
       toast.error(error.response?.data?.message || "Failed to promote employee")
+    },
+  })
+}
+
+export const useDeleteEmployeeMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.delete(`/employees/${id}`)
+      return response.data
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Recipient deleted successfully")
+      queryClient.invalidateQueries({ queryKey: ["employees"] })
+    },
+    onError: (error: AxiosError<{ message: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to delete recipient")
     },
   })
 }

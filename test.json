@@ -1,0 +1,337 @@
+{
+    "current_page": 1,
+    "data": [
+        {
+            "id": 7,
+            "company_id": 4,
+            "created_by_user_id": 103,
+            "vertical_id": 1,
+            "event_id": 1,
+            "custom_event_name": null,
+            "name": "VISHAL Birthday",
+            "description": "Test",
+            "distribution_type": "online",
+            "reward_type": "points",
+            "budget_locked": "0.00",
+            "total_recipients": 1,
+            "config_json": {
+                "landing_page_template_id": 1,
+                "email_template_id": 1,
+                "sms_content": "You've received a reward! Click the link below to claim it.",
+                "sms_cta": "Claim Reward",
+                "event_address": null,
+                "event_date": null,
+                "inquiry_notes": null,
+                "bulk_items": null
+            },
+            "status": "active",
+            "starts_at": "2026-05-30T10:02:09.000000Z",
+            "expires_at": null,
+            "created_at": "2026-05-30T10:02:09.000000Z",
+            "updated_at": "2026-05-30T10:02:10.000000Z",
+            "deleted_at": null,
+            "vertical": {
+                "id": 1,
+                "name": "Internal Employees"
+            },
+            "event": {
+                "id": 1,
+                "title": "New Joinee"
+            }
+        },
+        {
+            "id": 6,
+            "company_id": 4,
+            "created_by_user_id": 103,
+            "vertical_id": 1,
+            "event_id": 1,
+            "custom_event_name": null,
+            "name": "test coupan again",
+            "description": null,
+            "distribution_type": "online",
+            "reward_type": "code",
+            "budget_locked": "450.00",
+            "total_recipients": 1,
+            "config_json": {
+                "catalog_selection": [
+                    3
+                ],
+                "landing_page_template_id": 1,
+                "email_template_id": 1,
+                "sms_content": "You've received a reward! Click the link below to claim it.",
+                "sms_cta": "Claim Reward",
+                "event_address": null,
+                "event_date": null,
+                "inquiry_notes": null,
+                "bulk_items": null
+            },
+            "status": "scheduled",
+            "starts_at": "2026-05-30T00:43:00.000000Z",
+            "expires_at": "2026-06-06T00:43:00.000000Z",
+            "created_at": "2026-05-29T19:13:30.000000Z",
+            "updated_at": "2026-05-29T19:13:33.000000Z",
+            "deleted_at": null,
+            "vertical": {
+                "id": 1,
+                "name": "Internal Employees"
+            },
+            "event": {
+                "id": 1,
+                "title": "New Joinee"
+            }
+        },
+        {
+            "id": 5,
+            "company_id": 4,
+            "created_by_user_id": 103,
+            "vertical_id": 1,
+            "event_id": 1,
+            "custom_event_name": null,
+            "name": "test coupan",
+            "description": null,
+            "distribution_type": "online",
+            "reward_type": "code",
+            "budget_locked": "0.00",
+            "total_recipients": 1,
+            "config_json": {
+                "catalog_selection": [
+                    3
+                ],
+                "landing_page_template_id": 1,
+                "email_template_id": 1,
+                "sms_content": "You've received a reward! Click the link below to claim it.",
+                "sms_cta": "Claim Reward",
+                "reminder_initial_date": "2026-05-30T00:36",
+                "reminder_expiry_date": "2026-05-28T00:36",
+                "event_address": null,
+                "event_date": null,
+                "inquiry_notes": null,
+                "bulk_items": null
+            },
+            "status": "cancelled",
+            "starts_at": "2026-05-30T00:36:00.000000Z",
+            "expires_at": "2026-06-06T00:36:00.000000Z",
+            "created_at": "2026-05-29T19:07:05.000000Z",
+            "updated_at": "2026-05-29T19:10:46.000000Z",
+            "deleted_at": null,
+            "vertical": {
+                "id": 1,
+                "name": "Internal Employees"
+            },
+            "event": {
+                "id": 1,
+                "title": "New Joinee"
+            }
+        },
+        {
+            "id": 4,
+            "company_id": 4,
+            "created_by_user_id": 103,
+            "vertical_id": 2,
+            "event_id": null,
+            "custom_event_name": "test custom event",
+            "name": "test",
+            "description": null,
+            "distribution_type": "bulk",
+            "reward_type": null,
+            "budget_locked": "0.00",
+            "total_recipients": 0,
+            "config_json": {
+                "event_address": "test addresess",
+                "event_date": "2026-05-06T00:31",
+                "inquiry_notes": "Test Customization",
+                "bulk_items": [
+                    {
+                        "product_id": 1,
+                        "product_name": "Test Product",
+                        "variant_id": 1,
+                        "variant_name": "Navy Blue - XXL",
+                        "quantity": 5
+                    },
+                    {
+                        "product_id": 6,
+                        "product_name": "WATER BOTTLE",
+                        "variant_id": 5,
+                        "variant_name": "Black - 1L",
+                        "quantity": 5
+                    },
+                    {
+                        "product_id": 6,
+                        "product_name": "WATER BOTTLE",
+                        "variant_id": 6,
+                        "variant_name": "Blue - 750ml",
+                        "quantity": 3
+                    }
+                ]
+            },
+            "status": "cancelled",
+            "starts_at": "2026-05-29T19:01:51.000000Z",
+            "expires_at": null,
+            "created_at": "2026-05-29T19:01:51.000000Z",
+            "updated_at": "2026-05-29T19:04:23.000000Z",
+            "deleted_at": null,
+            "vertical": {
+                "id": 2,
+                "name": "External Client"
+            },
+            "event": null
+        },
+        {
+            "id": 3,
+            "company_id": 4,
+            "created_by_user_id": 103,
+            "vertical_id": 2,
+            "event_id": 17,
+            "custom_event_name": null,
+            "name": "bulk otder",
+            "description": null,
+            "distribution_type": "bulk",
+            "reward_type": null,
+            "budget_locked": "0.00",
+            "total_recipients": 0,
+            "config_json": {
+                "internal_admin_notes": null,
+                "bulk_items": [
+                    {
+                        "product_id": "Apple AirPods Pro (2nd Gen)",
+                        "variant_id": "AirPods Pro - Standard",
+                        "quantity": 7
+                    },
+                    {
+                        "product_id": "Premium Stainless Steel Water Bottle",
+                        "variant_id": "Black - 1L",
+                        "quantity": 5
+                    },
+                    {
+                        "product_id": "Premium Stainless Steel Water Bottle",
+                        "variant_id": "Blue - 750ml",
+                        "quantity": 4
+                    }
+                ],
+                "event_date": "2026-05-22",
+                "event_address": "delhi sagapru",
+                "inquiry_notes": "test"
+            },
+            "status": "completed",
+            "starts_at": "2026-05-29T18:15:54.000000Z",
+            "expires_at": null,
+            "created_at": "2026-05-29T18:15:54.000000Z",
+            "updated_at": "2026-05-29T18:25:12.000000Z",
+            "deleted_at": null,
+            "vertical": {
+                "id": 2,
+                "name": "External Client"
+            },
+            "event": {
+                "id": 17,
+                "title": "Digital Campaign - Lead Gen"
+            }
+        },
+        {
+            "id": 2,
+            "company_id": 4,
+            "created_by_user_id": 103,
+            "vertical_id": 1,
+            "event_id": 1,
+            "custom_event_name": null,
+            "name": "vishal",
+            "description": "vishal birthday",
+            "distribution_type": "online",
+            "reward_type": "points",
+            "budget_locked": "0.00",
+            "total_recipients": 1,
+            "config_json": {
+                "landing_page_template_id": 3,
+                "email_template_id": 1,
+                "sms_content": "You've received a reward! Click the link below to claim it.",
+                "sms_cta": "Claim Reward",
+                "event_address": null,
+                "event_date": null,
+                "inquiry_notes": null,
+                "bulk_items": null
+            },
+            "status": "cancelled",
+            "starts_at": "2026-05-24T17:06:13.000000Z",
+            "expires_at": null,
+            "created_at": "2026-05-24T17:06:13.000000Z",
+            "updated_at": "2026-05-29T18:54:14.000000Z",
+            "deleted_at": null,
+            "vertical": {
+                "id": 1,
+                "name": "Internal Employees"
+            },
+            "event": {
+                "id": 1,
+                "title": "New Joinee"
+            }
+        },
+        {
+            "id": 1,
+            "company_id": 4,
+            "created_by_user_id": 103,
+            "vertical_id": 1,
+            "event_id": 1,
+            "custom_event_name": null,
+            "name": "Test",
+            "description": null,
+            "distribution_type": "online",
+            "reward_type": "points",
+            "budget_locked": "0.00",
+            "total_recipients": 1,
+            "config_json": {
+                "landing_page_template_id": 1,
+                "email_template_id": 1,
+                "sms_content": "You've received a reward! Click the link below to claim it.",
+                "sms_cta": "Claim Reward",
+                "event_address": null,
+                "event_date": null,
+                "inquiry_notes": null,
+                "bulk_items": null
+            },
+            "status": "cancelled",
+            "starts_at": "2026-05-09T13:57:10.000000Z",
+            "expires_at": null,
+            "created_at": "2026-05-09T13:57:10.000000Z",
+            "updated_at": "2026-05-29T18:54:00.000000Z",
+            "deleted_at": null,
+            "vertical": {
+                "id": 1,
+                "name": "Internal Employees"
+            },
+            "event": {
+                "id": 1,
+                "title": "New Joinee"
+            }
+        }
+    ],
+    "first_page_url": "http:\/\/localhost:8000\/api\/admin\/campaigns?page=1",
+    "from": 1,
+    "last_page": 1,
+    "last_page_url": "http:\/\/localhost:8000\/api\/admin\/campaigns?page=1",
+    "links": [
+        {
+            "url": null,
+            "label": "&laquo; Previous",
+            "page": null,
+            "active": false
+        },
+        {
+            "url": "http:\/\/localhost:8000\/api\/admin\/campaigns?page=1",
+            "label": "1",
+            "page": 1,
+            "active": true
+        },
+        {
+            "url": null,
+            "label": "Next &raquo;",
+            "page": null,
+            "active": false
+        }
+    ],
+    "next_page_url": null,
+    "path": "http:\/\/localhost:8000\/api\/admin\/campaigns",
+    "per_page": 15,
+    "prev_page_url": null,
+    "to": 7,
+    "total": 7
+}

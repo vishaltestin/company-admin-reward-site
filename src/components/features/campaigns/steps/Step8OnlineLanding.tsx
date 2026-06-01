@@ -8,6 +8,9 @@ import {
   LayoutTemplate,
   MonitorSmartphone,
   CheckCircle2,
+  ExternalLink,
+  Eye,
+  RefreshCw,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -20,10 +23,12 @@ export function Step8OnlineLanding() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
 
-  const { data: templates, isLoading } = useCampaignLandingPages(
-    storeData.event_id,
-    activeTab
-  )
+  const {
+    data: templates,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useCampaignLandingPages(storeData.event_id, activeTab)
 
   const {
     handleSubmit,
@@ -37,7 +42,6 @@ export function Step8OnlineLanding() {
     },
   })
 
-  // const selectedTemplateId = watch("landing_page_template_id")
   const selectedTemplateId = useWatch({
     control,
     name: "landing_page_template_id",
@@ -92,24 +96,56 @@ export function Step8OnlineLanding() {
               }`}
             >
               {isSelected && (
-                <div className="absolute top-3 right-3 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+                <div className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-sm">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
               )}
 
-              <div className="flex aspect-video w-full items-center justify-center overflow-hidden border-b bg-gray-100">
+              <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden border-b bg-gray-100">
                 {template.thumbnail_path ? (
                   <img
                     src={`${import.meta.env.VITE_BACKEND_URL}/storage/${template.thumbnail_path}`}
                     alt={template.name}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
                   <MonitorSmartphone className="h-10 w-10 text-gray-300" />
                 )}
+
+                <div className="absolute inset-0 z-20 flex items-center justify-center gap-2 bg-black/50 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.open(
+                        `${import.meta.env.BASE_URL}/landing-pages/preview/${template.id}`,
+                        "_blank"
+                      )
+                    }}
+                    className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+                  >
+                    <Eye className="h-3.5 w-3.5 text-blue-600" /> Preview
+                  </button>
+
+                  {activeTab === "variations" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        window.open(
+                          `${import.meta.env.BASE_URL}/landing-pages/editor/${template.id}`,
+                          "_blank"
+                        )
+                      }}
+                      className="flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-gray-800"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="p-4">
+              <div className="relative z-10 bg-white p-4">
                 <h4
                   className="line-clamp-1 font-semibold text-gray-900"
                   title={template.name}
@@ -161,10 +197,26 @@ export function Step8OnlineLanding() {
           className="w-full space-y-6"
           onValueChange={(val) => setActiveTab(val as "global" | "variations")}
         >
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="global">Standard Themes</TabsTrigger>
-            <TabsTrigger value="variations">My Saved Designs</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="global">Standard Themes</TabsTrigger>
+              <TabsTrigger value="variations">My Saved Designs</TabsTrigger>
+            </TabsList>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="text-gray-600"
+            >
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+          </div>
 
           <TabsContent value="global" className="m-0 border-none outline-none">
             {renderTemplateGrid()}

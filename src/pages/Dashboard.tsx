@@ -10,7 +10,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="font-grotest text-4xl font-bold tracking-tight">
           Welcome back, {user.first_name}!
         </h1>
         <p className="mt-1">
@@ -35,11 +35,8 @@ export default function Dashboard() {
             </p>
           </CardContent>
         </Card>
-
-        {/* Add more top-level stats cards here */}
       </div>
 
-      {/* --- ADD THE BIG CALENDAR HERE --- */}
       <div className="mt-8">
         <FullCalendarWidget />
       </div>

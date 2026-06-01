@@ -124,7 +124,7 @@ export function AppSidebar() {
   if (!user) return null
 
   return (
-    <Sidebar collapsible="icon" variant="inset">
+    <Sidebar collapsible="icon" variant="inset" className="font-grotest">
       <SidebarHeader className="border-b-2 py-3 pb-2">
         <div className="flex items-center justify-center gap-2 px-2">
           {open ? (

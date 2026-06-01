@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react"
 
 import { type User } from "@/store/useAuthStore"
 import { VERTICAL_FIELDS } from "@/config/verticalFields"
-import { api } from "@/lib/axios"
+import { api, getApiErrorMessage } from "@/lib/axios"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -88,8 +88,8 @@ export function RewardeeForm({
       )
       onSuccess()
     },
-    onError: () => {
-      toast.error("Something went wrong processing this request.")
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error))
     },
   })
 
@@ -190,7 +190,10 @@ export function RewardeeForm({
                         }
                         value={field.value ? String(field.value) : undefined}
                       >
-                        <SelectTrigger id={`dynamic_${config.name}`}>
+                        <SelectTrigger
+                          id={`dynamic_${config.name}`}
+                          className="w-full"
+                        >
                           <SelectValue
                             placeholder={
                               config.placeholder || "Select an option"

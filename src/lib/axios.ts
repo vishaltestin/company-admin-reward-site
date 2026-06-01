@@ -39,3 +39,22 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+type ApiErrorResponse = {
+  message?: string
+  errors?: Record<string, string[]>
+}
+
+export const getApiErrorMessage = (error: unknown) => {
+  if (axios.isAxiosError<ApiErrorResponse>(error)) {
+    const data = error.response?.data
+    return (
+      data?.message ||
+      Object.values(data?.errors ?? {})[0]?.[0] ||
+      error.message ||
+      "Something went wrong."
+    )
+  }
+
+  return "Something went wrong."
+}

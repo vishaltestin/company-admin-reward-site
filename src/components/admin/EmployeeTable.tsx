@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react"
-import { useEmployeesQuery } from "@/hooks/useEmployees"
+import {
+  useEmployeesQuery,
+  useDeleteEmployeeMutation,
+} from "@/hooks/useEmployees"
 import { type User } from "@/store/useAuthStore"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -19,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Trash2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -27,6 +31,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface EmployeeTableProps {
   verticalSlug: string
@@ -43,6 +57,12 @@ export function EmployeeTable({
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
 
+  // Alert Dialog State
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+
+  const deleteMutation = useDeleteEmployeeMutation()
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchInput)
@@ -56,6 +76,25 @@ export function EmployeeTable({
     page,
     search: debouncedSearch,
   })
+
+  const closeDeleteDialog = (isOpen: boolean) => {
+    setIsDeleteDialogOpen(isOpen)
+    if (!isOpen) {
+      setTimeout(() => setUserToDelete(null), 300)
+    }
+  }
+
+  const confirmDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    if (userToDelete) {
+      deleteMutation.mutate(userToDelete.id, {
+        onSuccess: () => {
+          closeDeleteDialog(false)
+        },
+      })
+    }
+  }
 
   if (isError) {
     return (
@@ -143,7 +182,10 @@ export function EmployeeTable({
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-50"
+                      >
                         <DropdownMenuItem onClick={() => onEdit(user)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Profile
@@ -151,6 +193,17 @@ export function EmployeeTable({
                         <DropdownMenuItem onClick={() => onPromote(user)}>
                           <ShieldCheck className="mr-2 h-4 w-4 text-blue-500" />
                           Promote to Admin
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setUserToDelete(user)
+                            setIsDeleteDialogOpen(true)
+                          }}
+                          className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Recipient
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -187,6 +240,34 @@ export function EmployeeTable({
           </div>
         </div>
       )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              recipient
+              <span className="mx-1 font-semibold text-gray-900">
+                {userToDelete?.first_name} {userToDelete?.last_name}
+              </span>
+              and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Recipient"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
