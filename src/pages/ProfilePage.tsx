@@ -12,11 +12,11 @@ import { ProfileForm } from "@/components/settings/ProfileForm"
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm"
 import { BusinessInfoForm } from "@/components/settings/BusinessInfoForm"
 
-export default function SettingsPage() {
+export default function ProfilePage() {
   const user = useAuthStore((state) => state.user)
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
           Settings
@@ -28,10 +28,16 @@ export default function SettingsPage() {
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="profile">My Profile</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="profile" className="px-10 py-5">
+            My Profile
+          </TabsTrigger>
+          <TabsTrigger value="security" className="px-10 py-5">
+            Security
+          </TabsTrigger>
           {user?.user_type === "business_head" && (
-            <TabsTrigger value="company">Business Info</TabsTrigger>
+            <TabsTrigger value="company" className="px-10 py-5">
+              Business Info
+            </TabsTrigger>
           )}
         </TabsList>
 

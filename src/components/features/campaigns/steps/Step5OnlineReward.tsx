@@ -1,4 +1,4 @@
-import { useState } from "react"
+// import { useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -17,28 +17,29 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+//   DialogDescription,
+// } from "@/components/ui/dialog"
 
 import { useCampaignStore } from "@/store/useCampaignStore"
 import { step5OnlineSchema, type Step5OnlineData } from "../schemas"
-import { useWalletBalanceQuery, useMockTopUpMutation } from "@/hooks/usePayment"
+import {
+  useWalletBalanceQuery,
+  useRazorpayTopUpMutation,
+} from "@/hooks/usePayment"
 
 export function Step5OnlineReward() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
 
-  // Payment Hooks
   const { data: balanceData, isLoading: isLoadingWallet } =
     useWalletBalanceQuery()
-  const topUpMutation = useMockTopUpMutation()
+  const topUpMutation = useRazorpayTopUpMutation()
 
-  const [isTopUpOpen, setIsTopUpOpen] = useState(false)
-  const [topUpAmount, setTopUpAmount] = useState<string>("")
+  // const [isTopUpOpen, setIsTopUpOpen] = useState(false)
 
   const recipientCount = storeData.recipient_ids?.length || 0
 
@@ -67,22 +68,6 @@ export function Step5OnlineReward() {
   const pointsName = balanceData?.points_name || "Points"
   const hasSufficientFunds = currentBalance >= totalCost
   const shortfall = totalCost - currentBalance
-
-  const handleTopUpSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const amount = Number(topUpAmount)
-    if (amount >= 100) {
-      topUpMutation.mutate(
-        { fiat_amount: amount },
-        {
-          onSuccess: () => {
-            setIsTopUpOpen(false)
-            setTopUpAmount("")
-          },
-        }
-      )
-    }
-  }
 
   const onSubmit = (formData: Step5OnlineData) => {
     if (!hasSufficientFunds) return
@@ -242,9 +227,20 @@ export function Step5OnlineReward() {
                 <Button
                   type="button"
                   variant="destructive"
-                  onClick={() => setIsTopUpOpen(true)}
+                  disabled={topUpMutation.isPending}
+                  onClick={() =>
+                    topUpMutation.mutate(Math.max(100, Math.ceil(shortfall)))
+                  }
                 >
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Funds
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  {topUpMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                      Processing...
+                    </>
+                  ) : (
+                    "Add Funds"
+                  )}
                 </Button>
               )}
             </div>
@@ -277,7 +273,7 @@ export function Step5OnlineReward() {
           Continue <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
-
+      {/* 
       <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -310,7 +306,7 @@ export function Step5OnlineReward() {
             </Button>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </form>
   )
 }

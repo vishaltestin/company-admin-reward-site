@@ -6,6 +6,23 @@ export interface User {
   last_name: string
   email: string
   mobile: string | null
+  gender: string | null
+  dob: string | null
+
+  address_line_1: string | null
+  address_line_2: string | null
+  city: string | null
+  state: string | null
+  pincode: string | null
+  country: string | null
+
+  shipping_address_line_1: string | null
+  shipping_address_line_2: string | null
+  shipping_city: string | null
+  shipping_state: string | null
+  shipping_pincode: string | null
+  shipping_country: string | null
+
   user_type: "business_head" | "sub_admin"
   managed_vertical_ids: number[]
   managed_verticals?: { id: number; name: string; slug: string }[]
@@ -25,6 +42,7 @@ export interface User {
     points_name: string
     wallet_balance: number
     is_approved: boolean
+    verification_status: "pending" | "submitted" | "verified" | "rejected"
     terms_text: string | null
     privacy_text: string | null
     social_links: { platform: string; url: string }[] | null

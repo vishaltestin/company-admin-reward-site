@@ -66,7 +66,7 @@ export function Step11OnlineSchedule() {
           </p>
         </div>
 
-        <div className="grid max-w-2xl gap-8 border-b pb-8 sm:grid-cols-2">
+        <div className="grid gap-8 border-b pb-8 sm:grid-cols-2">
           <div className="space-y-3">
             <Label
               htmlFor="starts_at"
@@ -101,73 +101,75 @@ export function Step11OnlineSchedule() {
           </div>
         </div>
 
-        <div className="max-w-2xl space-y-6">
+        <div className="space-y-6">
           <h3 className="flex items-center gap-2 text-lg font-semibold">
             <CalendarClock className="h-5 w-5" /> Automated Reminders
           </h3>
 
-          <div className="space-y-4 rounded-xl border bg-gray-50 p-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="send_initial_reminder"
-                checked={sendInitialReminder}
-                onCheckedChange={(val) =>
-                  setValue("send_initial_reminder", !!val)
-                }
-              />
-              <Label htmlFor="send_initial_reminder" className="font-medium">
-                Send follow-up reminder after launch
-              </Label>
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div className="space-y-4 rounded-xl border bg-gray-50 p-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="send_initial_reminder"
+                  checked={sendInitialReminder}
+                  onCheckedChange={(val) =>
+                    setValue("send_initial_reminder", !!val)
+                  }
+                />
+                <Label htmlFor="send_initial_reminder" className="font-medium">
+                  Send follow-up reminder after launch
+                </Label>
+              </div>
+
+              {sendInitialReminder && (
+                <div className="animate-in space-y-2 pl-6 fade-in">
+                  <Label htmlFor="reminder_initial_date">Reminder Date</Label>
+                  <Input
+                    id="reminder_initial_date"
+                    type="datetime-local"
+                    className="bg-white"
+                    {...register("reminder_initial_date")}
+                  />
+                  {errors.reminder_initial_date && (
+                    <p className="text-sm font-medium text-destructive">
+                      {errors.reminder_initial_date.message}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
-            {sendInitialReminder && (
-              <div className="animate-in space-y-2 pl-6 fade-in">
-                <Label htmlFor="reminder_initial_date">Reminder Date</Label>
-                <Input
-                  id="reminder_initial_date"
-                  type="datetime-local"
-                  className="bg-white"
-                  {...register("reminder_initial_date")}
+            <div className="space-y-4 rounded-xl border bg-gray-50 p-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="send_expiry_reminder"
+                  checked={sendExpiryReminder}
+                  onCheckedChange={(val) =>
+                    setValue("send_expiry_reminder", !!val)
+                  }
                 />
-                {errors.reminder_initial_date && (
-                  <p className="text-sm font-medium text-destructive">
-                    {errors.reminder_initial_date.message}
-                  </p>
-                )}
+                <Label htmlFor="send_expiry_reminder" className="font-medium">
+                  Send "Urgent" reminder before expiration
+                </Label>
               </div>
-            )}
-          </div>
 
-          <div className="space-y-4 rounded-xl border bg-gray-50 p-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="send_expiry_reminder"
-                checked={sendExpiryReminder}
-                onCheckedChange={(val) =>
-                  setValue("send_expiry_reminder", !!val)
-                }
-              />
-              <Label htmlFor="send_expiry_reminder" className="font-medium">
-                Send "Urgent" reminder before expiration
-              </Label>
+              {sendExpiryReminder && (
+                <div className="animate-in space-y-2 pl-6 fade-in">
+                  <Label htmlFor="reminder_expiry_date">Reminder Date</Label>
+                  <Input
+                    id="reminder_expiry_date"
+                    type="datetime-local"
+                    className="bg-white"
+                    {...register("reminder_expiry_date")}
+                  />
+                  {errors.reminder_expiry_date && (
+                    <p className="text-sm font-medium text-destructive">
+                      {errors.reminder_expiry_date.message}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-
-            {sendExpiryReminder && (
-              <div className="animate-in space-y-2 pl-6 fade-in">
-                <Label htmlFor="reminder_expiry_date">Reminder Date</Label>
-                <Input
-                  id="reminder_expiry_date"
-                  type="datetime-local"
-                  className="bg-white"
-                  {...register("reminder_expiry_date")}
-                />
-                {errors.reminder_expiry_date && (
-                  <p className="text-sm font-medium text-destructive">
-                    {errors.reminder_expiry_date.message}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>

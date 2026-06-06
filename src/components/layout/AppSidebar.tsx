@@ -181,7 +181,7 @@ export function AppSidebar() {
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton
                           tooltip={item.title}
-                          className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10"
+                          className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10 font-medium uppercase" 
                         >
                           <div className="relative">
                             <div className="absolute top-1/2 -left-2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-opacity group-data-[state=open]/collapsible:opacity-100" />
@@ -196,7 +196,7 @@ export function AppSidebar() {
                           {visibleSubItems.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton asChild>
-                                <Link to={subItem.url}>
+                                <Link to={subItem.url} className="font-medium">
                                   <span>{subItem.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
@@ -215,7 +215,7 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive}
                     tooltip={item.title}
-                    className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10"
+                    className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10 font-medium uppercase"
                   >
                     <Link to={item.url}>
                       <item.icon className="h-5 w-5 text-primary" />

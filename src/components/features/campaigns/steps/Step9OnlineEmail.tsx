@@ -103,7 +103,7 @@ export function Step9OnlineEmail() {
               <div className="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden border-b bg-gray-100">
                 {template.thumbnail_path ? (
                   <img
-                    src={`${import.meta.env.VITE_BACKEND_URL}/storage/${template.thumbnail_path}`}
+                    src={template.thumbnail_path}
                     alt={template.name}
                     className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
                   />

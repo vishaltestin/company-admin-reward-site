@@ -87,10 +87,14 @@ export function NavUser() {
               </DropdownMenuItem>
 
               <DropdownMenuItem asChild>
-                <Link to="/storefront" className="flex gap-2">
+                <a
+                  href={`${import.meta.env.VITE_STOREFRONT_BASE_URL}/${user?.company?.alias}`}
+                  className="flex gap-2"
+                  target="_blank"
+                >
                   <Link2 />
                   Storefront
-                </Link>
+                </a>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 

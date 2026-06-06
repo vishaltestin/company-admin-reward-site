@@ -40,7 +40,7 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-md space-y-4">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label>Current Password</Label>
         <Input type="password" {...form.register("current_password")} />

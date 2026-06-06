@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store/useAuthStore"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FullCalendarWidget } from "@/components/dashboard/FullCalendarWidget"
+import { VerificationModal } from "@/components/layout/VerificationModal"
 
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user)
@@ -19,7 +20,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -35,11 +36,12 @@ export default function Dashboard() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       <div className="mt-8">
         <FullCalendarWidget />
       </div>
+      <VerificationModal />
     </div>
   )
 }

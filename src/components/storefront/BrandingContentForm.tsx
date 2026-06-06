@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Loader2, Building2, Plus, Trash2, HelpCircle } from "lucide-react"
+import { Loader2, Plus, Trash2, Upload, Building2 } from "lucide-react"
 
 import { useAuthStore } from "@/store/useAuthStore"
 import { useCompanyMutations } from "@/hooks/useSettings"
@@ -11,14 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
+import {  
   Select,
   SelectContent,
   SelectItem,
@@ -29,7 +22,7 @@ import {
 const brandingSchema = z.object({
   alias: z.string().optional(),
   points_name: z.string().min(1, "Points name is required"),
-  logo: z.any().optional(), // File upload
+  logo: z.any().optional(),
   terms_text: z.string().optional(),
   privacy_text: z.string().optional(),
   social_links: z
@@ -64,7 +57,6 @@ export function BrandingContentForm() {
     },
   })
 
-  // Dynamic Array for Social Links
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "social_links",
@@ -79,68 +71,67 @@ export function BrandingContentForm() {
 
   const onSubmit = (data: BrandingValues) => {
     const formData = new FormData()
-
     formData.append("points_name", data.points_name)
     if (data.terms_text) formData.append("terms_text", data.terms_text)
     if (data.privacy_text) formData.append("privacy_text", data.privacy_text)
-
     if (data.logo && data.logo.length > 0) {
       formData.append("logo", data.logo[0])
     }
-
-    // Format Social Links so Laravel understands it as an array in a multipart form
     if (data.social_links && data.social_links.length > 0) {
       data.social_links.forEach((link, index) => {
         formData.append(`social_links[${index}][platform]`, link.platform)
         formData.append(`social_links[${index}][url]`, link.url)
       })
     } else {
-      // Send empty array to clear it if user deletes all links
       formData.append("social_links", "[]")
     }
-
     updateStorefrontSettings.mutate(formData)
   }
 
   return (
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="max-w-4xl space-y-6"
-    >
-      {/* 1. IDENTITY CARD */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Storefront Identity</CardTitle>
-          <CardDescription>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 max-w-full">
+      {/* 1. IDENTITY SECTION */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-6 py-5">
+          <h2 className="text-base font-semibold text-black">
+            Storefront Identity
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
             Manage how your company appears on the storefront.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="space-y-4">
+          </p>
+        </div>
+
+        <div className="p-6 md:p-8">
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+            {/* Left Column: Inputs */}
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Storefront URL Alias</Label>
-                <div className="flex">
-                  <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">
-                    rewardsapp.in/ecom/
+                <Label className="text-sm font-medium text-gray-700">
+                  Storefront URL Alias
+                </Label>
+                {/* Seamless Input Group */}
+                <div className="flex w-full items-center overflow-hidden rounded-md border border-gray-300 bg-gray-50 transition-colors focus-within:border-black focus-within:ring-1 focus-within:ring-black">
+                  <span className="border-r border-gray-300 px-3 py-2 text-sm text-gray-500">
+                    {`${import.meta.env.VITE_STOREFRONT_BASE_URL}`}
                   </span>
-                  {/* Alias is disabled as requested */}
-                  <Input
-                    className="rounded-l-none"
+                  <input
+                    className="w-full border-0 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 focus:outline-none disabled:text-gray-500"
                     disabled
                     {...form.register("alias")}
                   />
                 </div>
-                <p className="flex items-center gap-1 text-xs text-gray-500">
-                  <HelpCircle className="h-3 w-3" /> Contact support to change
-                  your alias.
+                <p className="text-xs text-gray-500">
+                  Contact support to change your alias.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Points Currency Name</Label>
+                <Label className="text-sm font-medium text-gray-700">
+                  Points Currency Name
+                </Label>
                 <Input
                   placeholder="e.g., Reward Points, Coins, Stars"
+                  className="border-gray-300 focus-visible:border-black focus-visible:ring-black"
                   {...form.register("points_name")}
                 />
                 {form.formState.errors.points_name && (
@@ -151,80 +142,100 @@ export function BrandingContentForm() {
               </div>
             </div>
 
+            {/* Right Column: Logo Upload */}
             <div className="space-y-2">
-              <Label>Company Logo</Label>
-              <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed bg-gray-50 p-4">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
+              <Label className="text-sm font-medium text-gray-700">
+                Company Logo
+              </Label>
+              <div className="flex items-center gap-6 rounded-lg border border-dashed border-gray-300 p-5">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-50">
                   {previewUrl ? (
                     <img
                       src={previewUrl}
                       alt="Logo preview"
-                      className="h-full w-full object-contain p-2"
+                      className="h-full w-full object-contain p-1"
                     />
                   ) : (
-                    <Building2 className="h-8 w-8 text-gray-400" />
+                    <Building2 className="h-8 w-8 text-gray-300" />
                   )}
                 </div>
-                <div className="w-full">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    {...form.register("logo")}
-                    onChange={(e) => {
-                      form.register("logo").onChange(e)
-                      handleImageChange(e)
-                    }}
-                  />
+                <div className="flex flex-col gap-2">
+                  {/* Custom styled file upload button hiding the ugly native input */}
+                  <Label
+                    htmlFor="logo-upload"
+                    className="inline-flex w-fit cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors focus-within:ring-2 focus-within:ring-black focus-within:ring-offset-2 hover:bg-gray-50"
+                  >
+                    <Upload className="mr-2 h-4 w-4 text-gray-500" />
+                    <span>Upload Image</span>
+                    <Input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      className="sr-only" // This hides the ugly native button
+                      {...form.register("logo")}
+                      onChange={(e) => {
+                        form.register("logo").onChange(e)
+                        handleImageChange(e)
+                      }}
+                    />
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG up to 2MB (400x400px ideal).
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* 2. CONTENT CARD (Markdown) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Legal Content</CardTitle>
-          <CardDescription>
-            Format your policies using Markdown (e.g., **bold**, *italic*, #
-            Headings).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      {/* 2. CONTENT SECTION */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-6 py-5">
+          <h2 className="text-base font-semibold text-black">Legal Content</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Format your policies using Markdown.
+          </p>
+        </div>
+        <div className="space-y-6 p-6 md:p-8">
           <div className="space-y-2">
-            <Label>Terms & Conditions</Label>
+            <Label className="text-sm font-medium text-gray-700">
+              Terms & Conditions
+            </Label>
             <Textarea
-              rows={6}
-              className="font-mono text-sm"
-              placeholder="# Terms & Conditions\n\n1. First rule..."
+              rows={5}
+              className="border-gray-300 font-mono text-sm focus-visible:border-black focus-visible:ring-black"
+              placeholder="# Terms & Conditions..."
               {...form.register("terms_text")}
             />
           </div>
           <div className="space-y-2">
-            <Label>Privacy Policy</Label>
+            <Label className="text-sm font-medium text-gray-700">
+              Privacy Policy
+            </Label>
             <Textarea
-              rows={6}
-              className="font-mono text-sm"
-              placeholder="# Privacy Policy\n\nHow we handle data..."
+              rows={5}
+              className="border-gray-300 font-mono text-sm focus-visible:border-black focus-visible:ring-black"
+              placeholder="# Privacy Policy..."
               {...form.register("privacy_text")}
             />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* 3. SOCIAL LINKS CARD */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Social Media Links</CardTitle>
-          <CardDescription>
-            Add links to your company's social profiles to display in the
-            storefront footer.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* 3. SOCIAL LINKS SECTION */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-6 py-5">
+          <h2 className="text-base font-semibold text-black">
+            Social Media Links
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Links displayed in the storefront footer.
+          </p>
+        </div>
+        <div className="space-y-5 p-6 md:p-8">
           {fields.map((field, index) => (
-            <div key={field.id} className="flex items-start gap-3">
+            <div key={field.id} className="flex items-start gap-4">
               <div className="w-1/3 space-y-1">
                 <Select
                   onValueChange={(val) =>
@@ -232,7 +243,7 @@ export function BrandingContentForm() {
                   }
                   defaultValue={field.platform}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full border-gray-300 focus:border-black focus:ring-black">
                     <SelectValue placeholder="Platform" />
                   </SelectTrigger>
                   <SelectContent>
@@ -243,30 +254,21 @@ export function BrandingContentForm() {
                     <SelectItem value="Facebook">Facebook</SelectItem>
                   </SelectContent>
                 </Select>
-                {form.formState.errors.social_links?.[index]?.platform && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.social_links[index].platform.message}
-                  </p>
-                )}
               </div>
 
               <div className="flex-1 space-y-1">
                 <Input
                   placeholder="https://..."
+                  className="border-gray-300 focus-visible:border-black focus-visible:ring-black"
                   {...form.register(`social_links.${index}.url` as const)}
                 />
-                {form.formState.errors.social_links?.[index]?.url && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.social_links[index].url.message}
-                  </p>
-                )}
               </div>
 
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="shrink-0 text-red-500 hover:bg-red-50"
+                className="shrink-0 text-gray-400 transition-colors hover:bg-gray-100 hover:text-black"
                 onClick={() => remove(index)}
               >
                 <Trash2 className="h-4 w-4" />
@@ -278,18 +280,19 @@ export function BrandingContentForm() {
             type="button"
             variant="outline"
             onClick={() => append({ platform: "", url: "" })}
-            className="w-full border-dashed"
+            className="w-full border-dashed border-gray-300 py-6 text-gray-600 hover:bg-gray-50 hover:text-black"
           >
             <Plus className="mr-2 h-4 w-4" /> Add Social Link
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pb-8">
         <Button
           type="submit"
           disabled={updateStorefrontSettings.isPending}
           size="lg"
+          className="bg-black text-white hover:bg-gray-800"
         >
           {updateStorefrontSettings.isPending && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

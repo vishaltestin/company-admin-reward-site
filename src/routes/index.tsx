@@ -5,7 +5,6 @@ import Login from "@/pages/Login"
 import Dashboard from "@/pages/Dashboard"
 import SystemAdminsPage from "@/pages/SystemAdmins"
 import EmployeesPage from "@/pages/Employees"
-import SettingsPage from "@/pages/Settings"
 import StorefrontPage from "@/pages/Storefront"
 import EmailTemplatesPage from "@/pages/EmailTemplatesPage"
 import TemplateEditor from "@/components/features/email-templates/TemplateEditor"
@@ -17,6 +16,8 @@ import TransactionHistoryPage from "@/pages/TransactionHistory"
 import { CampaignWizard } from "@/components/features/campaigns/CampaignWizard"
 import CampaignsList from "@/pages/CampaignsList"
 import CampaignDetails from "@/pages/CampaignDetails"
+import ReportsDashboard from "@/pages/Reports"
+import ProfilePage from "@/pages/ProfilePage"
 
 export const router = createBrowserRouter(
   [
@@ -61,7 +62,7 @@ export const router = createBrowserRouter(
                 { path: "/system-admins", element: <SystemAdminsPage /> },
                 { path: "/storefront", element: <StorefrontPage /> },
                 { path: "/employees", element: <EmployeesPage /> },
-                { path: "/settings", element: <SettingsPage /> },
+                { path: "/profile", element: <ProfilePage /> },
                 { path: "/email-templates", element: <EmailTemplatesPage /> },
                 { path: "/payment", element: <PaymentPage /> },
                 {
@@ -91,6 +92,7 @@ export const router = createBrowserRouter(
                 },
                 { path: "/campaigns", element: <CampaignsList /> },
                 { path: "/campaign/:id", element: <CampaignDetails /> },
+                { path: "/reports", element: <ReportsDashboard /> },
               ],
             },
           ],

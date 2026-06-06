@@ -36,9 +36,9 @@ export function BusinessInfoForm() {
   return (
     <form
       onSubmit={form.handleSubmit((data) => updateBusinessDetails.mutate(data))}
-      className="max-w-2xl space-y-6"
+      className="space-y-6"
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="space-y-2">
           <Label>GST Number</Label>
           <Input {...form.register("gst_no")} />

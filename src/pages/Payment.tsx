@@ -3,7 +3,10 @@ import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useAuthStore } from "@/store/useAuthStore"
-import { useWalletBalanceQuery, useMockTopUpMutation } from "@/hooks/usePayment"
+import {
+  useWalletBalanceQuery,
+  useRazorpayTopUpMutation,
+} from "@/hooks/usePayment"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,7 +33,7 @@ type TopUpFormValues = z.infer<typeof topUpSchema>
 export default function PaymentPage() {
   const user = useAuthStore((state) => state.user)
   const { data: balanceData, isLoading } = useWalletBalanceQuery()
-  const topUpMutation = useMockTopUpMutation()
+  const topUpMutation = useRazorpayTopUpMutation()
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -58,15 +61,12 @@ export default function PaymentPage() {
   const estimatedPoints = (watchAmount || 0) * multiplier
 
   const onSubmit = (values: TopUpFormValues) => {
-    topUpMutation.mutate(
-      { fiat_amount: values.fiat_amount },
-      {
-        onSuccess: () => {
-          setIsOpen(false)
-          reset()
-        },
-      }
-    )
+    topUpMutation.mutate(values.fiat_amount, {
+      onSuccess: () => {
+        setIsOpen(false)
+        reset()
+      },
+    })
   }
 
   if (isLoading) {
@@ -78,7 +78,7 @@ export default function PaymentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Wallet & Billing</h1>
         <p className="text-muted-foreground">
@@ -123,7 +123,7 @@ export default function PaymentPage() {
                       htmlFor="fiat_amount"
                       className={errors.fiat_amount ? "text-destructive" : ""}
                     >
-                      Amount in Fiat (₹)
+                      Amount in INR (₹)
                     </Label>
                     <Input
                       id="fiat_amount"

@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
@@ -21,20 +21,28 @@ const profileSchema = z.object({
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email"),
   mobile: z.string().optional(),
-  Gender: z.string().min(1, "Gender is required"),
+  gender: z.string().min(1, "Gender is required"),
   dob: z.string().min(1, "Date of birth is required"),
-  Address: z.string().min(1, "Address is required"),
-  City: z.string().min(1, "City is required"),
-  State: z.string().min(1, "State is required"),
-  PinCode: z.string().min(1, "Pincode is required"),
-  Country: z.string().min(1, "Country is required"),
+
+  address_line_1: z.string().min(1, "Address is required"),
+  address_line_2: z.string().optional(),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  pincode: z.string().min(1, "Pincode is required"),
+  country: z.string().min(1, "Country is required"),
+
+  shipping_address_line_1: z.string().optional(),
+  shipping_address_line_2: z.string().optional(),
+  shipping_city: z.string().optional(),
+  shipping_state: z.string().optional(),
+  shipping_pincode: z.string().optional(),
+  shipping_country: z.string().optional(),
 })
 
 type ProfileValues = z.infer<typeof profileSchema>
 
 export function ProfileForm() {
-  // We cast user to 'any' locally just for initialization if your User interface doesn't have these exact fields yet
-  const user = useAuthStore((state) => state.user) as any
+  const user = useAuthStore((state) => state.user)
   const { updateProfile } = useProfileMutations()
 
   const form = useForm<ProfileValues>({
@@ -44,22 +52,33 @@ export function ProfileForm() {
       last_name: user?.last_name || "",
       email: user?.email || "",
       mobile: user?.mobile || "",
-      Gender: user?.Gender || "",
+      gender: user?.gender || "",
       dob: user?.dob ? user.dob.split("T")[0] : "",
-      Address: user?.Address || "",
-      City: user?.City || "",
-      State: user?.State || "",
-      PinCode: user?.PinCode || "",
-      Country: user?.Country || "India",
+
+      // Home
+      address_line_1: user?.address_line_1 || "",
+      address_line_2: user?.address_line_2 || "",
+      city: user?.city || "",
+      state: user?.state || "",
+      pincode: user?.pincode || "",
+      country: user?.country || "India",
+
+      // Shipping
+      shipping_address_line_1: user?.shipping_address_line_1 || "",
+      shipping_address_line_2: user?.shipping_address_line_2 || "",
+      shipping_city: user?.shipping_city || "",
+      shipping_state: user?.shipping_state || "",
+      shipping_pincode: user?.shipping_pincode || "",
+      shipping_country: user?.shipping_country || "India",
     },
   })
 
   return (
     <form
       onSubmit={form.handleSubmit((data) => updateProfile.mutate(data))}
-      className="max-w-2xl space-y-6"
+      className="space-y-6"
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <div className="space-y-2">
           <Label>First Name</Label>
           <Input {...form.register("first_name")} />
@@ -78,19 +97,22 @@ export function ProfileForm() {
         </div>
         <div className="space-y-2">
           <Label>Gender</Label>
-          <Select
-            onValueChange={(value) => form.setValue("Gender", value)}
-            defaultValue={form.watch("Gender")}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Gender" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Male">Male</SelectItem>
-              <SelectItem value="Female">Female</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          <Controller
+            control={form.control}
+            name="gender"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
         <div className="space-y-2">
           <Label>Date of Birth</Label>
@@ -98,28 +120,85 @@ export function ProfileForm() {
         </div>
       </div>
 
+      {/* --- HOME ADDRESS --- */}
       <div className="space-y-4 border-t pt-4">
         <h3 className="text-lg font-semibold">Home Address</h3>
+
         <div className="space-y-2">
           <Label>Address Line 1</Label>
-          <Input {...form.register("Address")} />
+          <Input
+            {...form.register("address_line_1")}
+            placeholder="Street address..."
+          />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="space-y-2">
+          <Label>Address Line 2 (Optional)</Label>
+          <Input
+            {...form.register("address_line_2")}
+            placeholder="Apartment, suite, landmark..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <div className="space-y-2">
             <Label>City</Label>
-            <Input {...form.register("City")} />
+            <Input {...form.register("city")} />
           </div>
           <div className="space-y-2">
             <Label>State</Label>
-            <Input {...form.register("State")} />
+            <Input {...form.register("state")} />
           </div>
           <div className="space-y-2">
             <Label>Pincode</Label>
-            <Input {...form.register("PinCode")} />
+            <Input {...form.register("pincode")} />
           </div>
           <div className="space-y-2">
             <Label>Country</Label>
-            <Input {...form.register("Country")} />
+            <Input {...form.register("country")} />
+          </div>
+        </div>
+      </div>
+
+      {/* --- SHIPPING ADDRESS --- */}
+      <div className="mt-6 space-y-4 border-t pt-6">
+        <h3 className="text-lg font-semibold">Shipping Address</h3>
+        <p className="mb-4 text-sm text-gray-500">
+          Leave blank if same as home address.
+        </p>
+
+        <div className="space-y-2">
+          <Label>Address Line 1</Label>
+          <Input
+            {...form.register("shipping_address_line_1")}
+            placeholder="Street address..."
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Address Line 2 (Optional)</Label>
+          <Input
+            {...form.register("shipping_address_line_2")}
+            placeholder="Apartment, suite, landmark..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="space-y-2">
+            <Label>City</Label>
+            <Input {...form.register("shipping_city")} />
+          </div>
+          <div className="space-y-2">
+            <Label>State</Label>
+            <Input {...form.register("shipping_state")} />
+          </div>
+          <div className="space-y-2">
+            <Label>Pincode</Label>
+            <Input {...form.register("shipping_pincode")} />
+          </div>
+          <div className="space-y-2">
+            <Label>Country</Label>
+            <Input {...form.register("shipping_country")} />
           </div>
         </div>
       </div>

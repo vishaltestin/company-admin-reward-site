@@ -193,7 +193,7 @@ export function Step6OnlineCatalog() {
                     <div className="mb-2 aspect-square w-full rounded-lg border bg-white p-2">
                       {product.main_image ? (
                         <img
-                          src={`${import.meta.env.VITE_BACKEND_URL}/storage/${product.main_image}`}
+                          src={product.main_image}
                           alt={product.name}
                           className="h-full w-full object-contain"
                         />

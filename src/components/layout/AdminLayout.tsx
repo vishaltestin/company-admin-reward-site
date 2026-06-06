@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom"
 import { AppSidebar } from "./AppSidebar"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { TooltipProvider } from "@/components/ui/tooltip" 
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 export function AdminLayout() {
   return (
@@ -11,7 +11,7 @@ export function AdminLayout() {
 
         <main className="flex flex-1 flex-col overflow-hidden">
           {/* Top Header with Mobile Trigger */}
-          <header className="flex h-14 items-center gap-4  px-4 lg:h-15 lg:px-6">
+          <header className="flex h-14 items-center gap-4 px-4 lg:h-15 lg:px-6">
             <SidebarTrigger />
             <div className="w-full flex-1">
               {/* Global search or breadcrumbs can go here later */}

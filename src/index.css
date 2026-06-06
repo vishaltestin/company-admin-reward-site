@@ -3,6 +3,9 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/space-grotesk/wght.css";
+body{
+  overflow-x: clip;
+}
 
 @custom-variant dark (&:is(.dark *));
 

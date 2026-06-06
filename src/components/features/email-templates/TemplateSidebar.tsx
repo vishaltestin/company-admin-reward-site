@@ -14,92 +14,134 @@ export function TemplateSidebar({
 
   if (isLoading) {
     return (
-      <div className="w-64 animate-pulse border-r bg-gray-50/50 p-6">
-        Loading categories...
+      <div className="flex w-72 flex-col border-r bg-slate-50/50 p-6">
+        <div className="mb-6 h-6 w-32 animate-pulse rounded bg-slate-200"></div>
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="h-4 w-4 animate-pulse rounded bg-slate-200"></div>
+              <div className="h-4 w-full animate-pulse rounded bg-slate-200"></div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
-    <aside className="h-full w-72 overflow-y-auto border-r bg-white">
-      <div className="border-b p-4">
-        <h2 className="text-lg font-semibold text-gray-800">Event Triggers</h2>
-        <p className="text-xs text-gray-500">
+    <aside className="flex h-full w-72 flex-col border-r border-slate-200 bg-white">
+      <div className="border-b border-slate-100 px-6 py-5">
+        <h2 className="text-lg font-bold text-slate-900">Event Triggers</h2>
+        <p className="mt-1 text-sm text-slate-500">
           Select an event to manage templates
         </p>
       </div>
 
-      <div className="space-y-6 p-4">
-        {verticals?.map((vertical) => (
-          <div key={vertical.id}>
-            <h3 className="mb-3 text-xs font-bold tracking-wider text-gray-400 uppercase">
-              {vertical.name}
-            </h3>
+      <div className="custom-scrollbar flex-1 overflow-y-auto p-4">
+        <div className="space-y-8">
+          {verticals?.map((vertical) => (
+            <div key={vertical.id}>
+              <h3 className="mb-3 px-2 text-xs font-bold tracking-widest text-slate-400 uppercase">
+                {vertical.name}
+              </h3>
 
-            <ul className="space-y-1">
-              {vertical.items.map((item, index) => {
-                // SCENARIO 1: A Folder (e.g., "Marketing")
-                if (item.type === "group") {
+              <ul className="space-y-1.5">
+                {vertical.items.map((item, index) => {
+                  // SCENARIO 1: A Folder (e.g., "Marketing")
+                  if (item.type === "group") {
+                    return (
+                      <li key={index} className="mb-4 last:mb-0">
+                        <div className="flex items-center gap-2 px-2 py-1.5 text-sm font-semibold text-slate-800">
+                          <Folder className="h-4 w-4 text-blue-500/70" />
+                          {item.title}
+                        </div>
+                        <ul className="mt-1 ml-3 space-y-1 border-l-2 border-slate-100 pl-3">
+                          {item.events.map((event) => {
+                            const isSelected = selectedEventId === event.id
+                            return (
+                              <li key={event.id}>
+                                <button
+                                  onClick={() => onSelectEvent(event.id)}
+                                  className={`group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-all ${
+                                    isSelected
+                                      ? "bg-blue-50 text-blue-700"
+                                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                  }`}
+                                >
+                                  <span
+                                    className={`truncate ${isSelected ? "font-semibold" : "font-medium"}`}
+                                  >
+                                    {event.title}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    {event.variation_count > 0 && (
+                                      <span
+                                        className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+                                          isSelected
+                                            ? "bg-blue-200/50 text-blue-700"
+                                            : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
+                                        }`}
+                                      >
+                                        {event.variation_count}
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </li>
+                    )
+                  }
+
+                  const isSelected = selectedEventId === item.id
                   return (
-                    <li key={index} className="mb-2">
-                      <div className="flex items-center gap-2 px-2 py-1.5 text-sm font-medium text-gray-700">
-                        <Folder className="h-4 w-4 text-gray-400" />
-                        {item.title}
-                      </div>
-                      <ul className="mt-1 ml-5 space-y-1 border-l border-gray-100">
-                        {item.events.map((event) => (
-                          <li key={event.id}>
-                            <button
-                              onClick={() => onSelectEvent(event.id)}
-                              className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                                selectedEventId === event.id
-                                  ? "bg-blue-50 font-medium text-blue-700"
-                                  : "text-gray-600 hover:bg-gray-50"
+                    <li key={`event-${item.id}`}>
+                      <button
+                        onClick={() => onSelectEvent(item.id)}
+                        className={`group flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm transition-all ${
+                          isSelected
+                            ? "bg-blue-50 text-blue-700 ring-1 ring-blue-100/50"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <Mail
+                            className={`h-4 w-4 transition-colors ${
+                              isSelected
+                                ? "text-blue-600"
+                                : "text-slate-400 group-hover:text-slate-500"
+                            }`}
+                          />
+                          <span
+                            className={`truncate ${isSelected ? "font-semibold" : "font-medium"}`}
+                          >
+                            {item.title}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          {item.variation_count > 0 && (
+                            <span
+                              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+                                isSelected
+                                  ? "bg-blue-200/50 text-blue-700"
+                                  : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
                               }`}
                             >
-                              <span className="truncate">{event.title}</span>
-                              {event.variation_count > 0 && (
-                                <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-600">
-                                  {event.variation_count}
-                                </span>
-                              )}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
+                              {item.variation_count}
+                            </span>
+                          )}
+                        </div>
+                      </button>
                     </li>
                   )
-                }
-
-                // SCENARIO 2: A Direct Event (e.g., "New Joinee")
-                return (
-                  <li key={`event-${item.id}`}>
-                    <button
-                      onClick={() => onSelectEvent(item.id)}
-                      className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors ${
-                        selectedEventId === item.id
-                          ? "bg-blue-50 font-medium text-blue-700"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <Mail
-                          className={`h-4 w-4 ${selectedEventId === item.id ? "text-blue-500" : "text-gray-400"}`}
-                        />
-                        <span className="truncate">{item.title}</span>
-                      </div>
-                      {item.variation_count > 0 && (
-                        <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-600">
-                          {item.variation_count}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
       </div>
     </aside>
   )

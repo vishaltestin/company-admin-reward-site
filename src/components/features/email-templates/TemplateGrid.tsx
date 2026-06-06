@@ -1,5 +1,13 @@
 import { useState } from "react"
-import { Copy, Edit, Mail, Trash2, Eye, Loader2 } from "lucide-react"
+import {
+  Copy,
+  Edit,
+  Mail,
+  Trash2,
+  Eye,
+  Loader2,
+  LayoutTemplate,
+} from "lucide-react"
 import { useTemplateMutations, useTemplatesQuery } from "@/hooks/templates"
 import { useNavigate } from "react-router-dom"
 import { TemplatePreviewModal } from "./TemplatePreviewModal"
@@ -50,75 +58,109 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
 
   if (!selectedEventId) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-gray-50">
-        <div className="text-center text-gray-500">
-          <Mail className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-          <p>Select an event from the sidebar to view templates.</p>
+      <div className="flex flex-1 items-center justify-center bg-slate-50/50">
+        <div className="flex max-w-sm flex-col items-center text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+            <LayoutTemplate className="h-8 w-8 text-slate-400" />
+          </div>
+          <h3 className="mb-1 text-lg font-semibold text-slate-900">
+            No Event Selected
+          </h3>
+          <p className="text-sm text-slate-500">
+            Choose an event trigger from the sidebar on the left to view and
+            manage its associated email templates.
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-gray-50/30">
-      <div className="flex space-x-6 border-b bg-white px-8 pt-6">
-        <button
-          onClick={() => setActiveTab("global")}
-          className={`border-b-2 pb-4 text-sm font-medium transition-colors ${
-            activeTab === "global"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          System Master Templates
-        </button>
-        <button
-          onClick={() => setActiveTab("variations")}
-          className={`border-b-2 pb-4 text-sm font-medium transition-colors ${
-            activeTab === "variations"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          My Company Variations
-        </button>
+    <div className="flex h-full flex-1 flex-col overflow-hidden bg-slate-50/30">
+      {/* Header & Tabs */}
+      <div className="border-b bg-white px-8 py-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-slate-800">Templates</h2>
+
+          <div className="inline-flex rounded-lg bg-slate-100 p-1">
+            <button
+              onClick={() => setActiveTab("global")}
+              className={`flex items-center rounded-md px-4 py-2 text-sm font-medium transition-all ${
+                activeTab === "global"
+                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50"
+                  : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-700"
+              }`}
+            >
+              System Master
+            </button>
+            <button
+              onClick={() => setActiveTab("variations")}
+              className={`flex items-center rounded-md px-4 py-2 text-sm font-medium transition-all ${
+                activeTab === "variations"
+                  ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50"
+                  : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-700"
+              }`}
+            >
+              My Variations
+            </button>
+          </div>
+        </div>
       </div>
 
+      {/* Grid Content */}
       <div className="flex-1 overflow-y-auto p-8">
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="h-64 animate-pulse rounded-lg bg-gray-100"
-              />
+                className="flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
+              >
+                <div className="h-32 w-full animate-pulse rounded-lg bg-slate-100"></div>
+                <div className="mt-4 h-4 w-3/4 animate-pulse rounded bg-slate-100"></div>
+                <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-slate-100"></div>
+                <div className="mt-6 h-10 w-full animate-pulse rounded-md bg-slate-50"></div>
+              </div>
             ))}
           </div>
         ) : templates?.length === 0 ? (
-          <div className="py-20 text-center text-gray-500">
-            No templates found for this event in this tab.
+          <div className="flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 py-20 text-center">
+            <Mail className="mb-3 h-10 w-10 text-slate-300" />
+            <p className="text-sm font-medium text-slate-600">
+              No templates found
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              There are no templates for this event in the current tab.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {templates?.map((template) => (
               <div
                 key={template.id}
-                className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md"
+                className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:ring-1 hover:ring-blue-100"
               >
-                <div className="group relative flex h-40 items-center justify-center overflow-hidden border-b bg-gray-100">
+                <div className="relative flex h-44 items-center justify-center overflow-hidden border-b border-slate-100 bg-slate-50">
                   {template.thumbnail_path ? (
                     <img
                       src={template.thumbnail_path}
                       alt="thumbnail"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <span className="text-sm text-gray-400">No Preview</span>
+                    <div className="flex flex-col items-center text-slate-300">
+                      <LayoutTemplate className="mb-2 h-8 w-8 opacity-50" />
+                      <span className="text-xs font-medium tracking-wider uppercase">
+                        No Preview
+                      </span>
+                    </div>
                   )}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100">
+
+                  {/* Image Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 opacity-0 backdrop-blur-[2px] transition-all duration-200 group-hover:opacity-100">
                     <button
                       onClick={() => setPreviewId(template.id.toString())}
-                      className="flex scale-95 transform items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-lg transition-transform hover:bg-gray-100 group-hover:scale-100"
+                      className="flex scale-90 transform items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:scale-105 hover:bg-white group-hover:scale-100"
                     >
                       <Eye className="h-4 w-4 text-blue-600" />
                       Quick View
@@ -126,33 +168,42 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                   </div>
                 </div>
 
-                <div className="flex flex-1 flex-col p-4">
-                  <h4 className="line-clamp-1 font-semibold text-gray-800">
+                <div className="flex flex-1 flex-col p-5">
+                  <h4
+                    className="line-clamp-1 font-semibold text-slate-800"
+                    title={template.name}
+                  >
                     {template.name}
                   </h4>
-                  <p className="mt-1 line-clamp-1 flex-1 text-xs text-gray-500">
-                    Subj: {template.subject}
-                  </p>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                    <span className="font-medium text-slate-400">Subj:</span>
+                    <span
+                      className="line-clamp-1 flex-1"
+                      title={template.subject}
+                    >
+                      {template.subject}
+                    </span>
+                  </div>
 
-                  <div className="mt-4 flex items-center justify-between border-t pt-4">
+                  <div className="mt-5 flex items-center justify-between pt-1">
                     {activeTab === "global" ? (
                       <button
                         onClick={() => duplicateMutation.mutate(template.id)}
                         disabled={duplicateMutation.isPending}
-                        className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-50 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-50 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 disabled:opacity-50"
                       >
                         <Copy className="h-4 w-4" />
                         {duplicateMutation.isPending
                           ? "Copying..."
-                          : "Customize & Save to My Variations"}
+                          : "Customize Design"}
                       </button>
                     ) : (
-                      <>
+                      <div className="flex w-full gap-2">
                         <button
                           onClick={() =>
                             navigate(`/email-templates/editor/${template.id}`)
                           }
-                          className="flex flex-1 items-center justify-center gap-2 rounded-md bg-gray-900 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+                          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
                         >
                           <Edit className="h-4 w-4" />
                           Edit Design
@@ -164,11 +215,12 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                               name: template.name,
                             })
                           }
-                          className="ml-2 rounded-md p-2 text-red-500 transition-colors hover:bg-red-50"
+                          className="flex items-center justify-center rounded-lg border border-red-100 bg-red-50 p-2.5 text-red-600 transition-colors hover:bg-red-100 hover:text-red-700"
+                          title="Delete Template"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -186,20 +238,20 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Template Variation</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the{" "}
-              <span className="font-semibold text-gray-900">
-                {templateToDelete?.name}
-              </span>{" "}
-              template variation.
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-slate-900">
+                "{templateToDelete?.name}"
+              </span>
+              ? This action cannot be undone and will permanently remove it from
+              your variations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMutation.isPending}>
               Cancel
             </AlertDialogCancel>
-
             <Button
               variant="destructive"
               onClick={handleDelete}
@@ -211,7 +263,7 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                   Deleting...
                 </>
               ) : (
-                "Delete"
+                "Delete Template"
               )}
             </Button>
           </AlertDialogFooter>

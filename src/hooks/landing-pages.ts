@@ -7,6 +7,7 @@ export interface LandingPageTemplate {
   id: number
   name: string
   title: string
+  thumbnail_path: string | null
   status: "draft" | "published" | "archived"
   updated_at: string
 }
@@ -125,6 +126,7 @@ export const useLandingPageMutations = () => {
       data: {
         name?: string
         title?: string
+        thumbnail_path?: string
         status?: "draft" | "published" | "archived"
         global_theme_tokens?: Record<string, unknown>
         seo_meta?: Record<string, unknown>
