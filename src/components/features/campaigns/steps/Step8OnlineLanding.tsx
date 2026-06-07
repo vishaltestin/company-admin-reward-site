@@ -118,7 +118,8 @@ export function Step8OnlineLanding() {
                     onClick={(e) => {
                       e.stopPropagation()
                       window.open(
-                        `${import.meta.env.BASE_URL}/landing-pages/preview/${template.id}`,
+                        // `${import.meta.env.BASE_URL}/landing-pages/preview/${template.id}`,
+                        `/landing-pages/preview/${template.id}`,
                         "_blank"
                       )
                     }}
@@ -133,7 +134,8 @@ export function Step8OnlineLanding() {
                       onClick={(e) => {
                         e.stopPropagation()
                         window.open(
-                          `${import.meta.env.BASE_URL}/landing-pages/editor/${template.id}`,
+                          // `${import.meta.env.BASE_URL}/landing-pages/editor/${template.id}`,
+                          `/landing-pages/editor/${template.id}`,
                           "_blank"
                         )
                       }}

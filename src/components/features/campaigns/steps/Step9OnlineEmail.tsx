@@ -129,7 +129,8 @@ export function Step9OnlineEmail() {
                       onClick={(e) => {
                         e.stopPropagation()
                         window.open(
-                          `${import.meta.env.BASE_URL}/email-templates/editor/${template.id}`,
+                          // `${import.meta.env.BASE_URL}/email-templates/editor/${template.id}`,
+                          `/email-templates/editor/${template.id}`,
                           "_blank"
                         )
                       }}
