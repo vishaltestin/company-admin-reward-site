@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Eye,
+  Gift,
   RefreshCw,
 } from "lucide-react"
 
@@ -23,12 +24,29 @@ export function Step8OnlineLanding() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
 
+  // Reward-link claim pages MUST contain a reward picker section; the API
+  // filters the offered templates accordingly (reward_type param). Other
+  // reward types keep the unfiltered list.
+  const rewardType = storeData.reward_type
+
+  // The API filter param only understands online reward types — narrow the
+  // store's wider union (which includes "physical_bulk" for wholesale
+  // campaigns) before passing it down.
+  const claimFilter: "link" | "points" | "code" | null =
+    rewardType === "link" || rewardType === "points" || rewardType === "code"
+      ? rewardType
+      : null
+
   const {
     data: templates,
     isLoading,
     refetch,
     isRefetching,
-  } = useCampaignLandingPages(storeData.event_id, activeTab)
+  } = useCampaignLandingPages(
+    storeData.event_id ?? null,
+    activeTab,
+    claimFilter
+  )
 
   const {
     handleSubmit,
@@ -46,6 +64,22 @@ export function Step8OnlineLanding() {
     control,
     name: "landing_page_template_id",
   })
+
+  // If the reward-type filter removes the previously selected template
+  // (e.g. HR picked a design earlier, then switched the campaign to
+  // reward-link), clear the stale selection instead of submitting an id the
+  // backend will reject.
+  useEffect(() => {
+    if (
+      templates &&
+      selectedTemplateId &&
+      !templates.some((template) => template.id === selectedTemplateId)
+    ) {
+      setValue("landing_page_template_id", undefined, {
+        shouldValidate: true,
+      })
+    }
+  }, [templates, selectedTemplateId, setValue])
 
   const onSubmit = (formData: Step8OnlineData) => {
     updateData(formData)
@@ -69,9 +103,11 @@ export function Step8OnlineLanding() {
             No templates found
           </h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
-            {activeTab === "global"
-              ? "No standard templates are available for this event yet."
-              : "You haven't created any custom templates for this event. Try selecting a standard theme instead."}
+            {rewardType === "link"
+              ? "No claim-capable templates exist for this event yet. You can skip this step — employees will get the standard reward claim page."
+              : activeTab === "global"
+                ? "No standard templates are available for this event yet."
+                : "You haven't created any custom templates for this event. Try selecting a standard theme instead."}
           </p>
         </div>
       )
@@ -118,7 +154,8 @@ export function Step8OnlineLanding() {
                     onClick={(e) => {
                       e.stopPropagation()
                       window.open(
-                        // `${import.meta.env.BASE_URL}/landing-pages/preview/${template.id}`,
+                        // Admin pages are served at the app root — no
+                        // /admin prefix.
                         `/landing-pages/preview/${template.id}`,
                         "_blank"
                       )
@@ -134,7 +171,8 @@ export function Step8OnlineLanding() {
                       onClick={(e) => {
                         e.stopPropagation()
                         window.open(
-                          // `${import.meta.env.BASE_URL}/landing-pages/editor/${template.id}`,
+                          // Admin pages are served at the app root — no
+                          // /admin prefix.
                           `/landing-pages/editor/${template.id}`,
                           "_blank"
                         )
@@ -180,6 +218,18 @@ export function Step8OnlineLanding() {
             reward.
           </p>
         </div>
+
+        {rewardType === "link" && (
+          <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <Gift className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+            <p className="text-sm text-blue-800">
+              <span className="font-semibold">Reward-link campaign:</span> only
+              designs containing a reward picker are shown below — a claim page
+              is useless without one. If nothing fits, skip this step and
+              employees will see the standard reward claim page.
+            </p>
+          </div>
+        )}
 
         {!storeData.event_id ? (
           <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6">
@@ -243,9 +293,24 @@ export function Step8OnlineLanding() {
         <Button type="button" variant="outline" onClick={prevStep}>
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button type="submit" disabled={!selectedTemplateId}>
-          Continue <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Landing page is OPTIONAL: skipping clears any earlier pick so the
+              campaign simply runs without a web experience — reward emails
+              link straight to the storefront claim page instead. */}
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              updateData({ landing_page_template_id: undefined })
+              nextStep()
+            }}
+          >
+            Skip for now
+          </Button>
+          <Button type="submit" disabled={!selectedTemplateId}>
+            Continue <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </form>
   )

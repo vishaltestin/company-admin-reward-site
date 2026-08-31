@@ -66,9 +66,13 @@ export const step6OnlineSchema = z
 export type Step6OnlineData = z.infer<typeof step6OnlineSchema>
 
 export const step8OnlineSchema = z.object({
-  landing_page_template_id: z.number({
-    error: "Please select a landing page template.",
-  }),
+  // Optional by design: the wizard offers "Skip for now", and the
+  // reward-link filter can drop a previously picked template. A campaign is
+  // valid without a landing page — employees then get the standard claim
+  // page (ClaimController's default schema). The Continue button stays
+  // disabled until a template is picked, so "required" is enforced in the
+  // UI, not here.
+  landing_page_template_id: z.number().optional(),
 })
 export type Step8OnlineData = z.infer<typeof step8OnlineSchema>
 

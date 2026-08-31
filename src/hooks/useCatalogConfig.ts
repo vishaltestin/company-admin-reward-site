@@ -32,6 +32,16 @@ export interface CatalogCategory {
   id: number
   name: string
   parent_id: number | null
+  /**
+   * Effective visibility on the storefront (pivot override ?? global).
+   * global_is_active=false means the platform deactivated this category;
+   * pivot_is_active=true is the company's "show anyway" override
+   * (null = inherit the platform setting).
+   */
+  is_active?: boolean
+  global_is_active?: boolean
+  pivot_is_active?: boolean | null
+  pivot_sort_order?: number | null
   primary_products: CatalogProduct[]
   secondary_products?: CatalogProduct[]
 }
@@ -83,6 +93,42 @@ export const useCatalogVisibilityMutation = () => {
         toast.error(error.response.data.message)
       } else {
         toast.error("Failed to update catalog visibility.")
+      }
+    },
+  })
+}
+
+/**
+ * HR's per-company category controls:
+ * - order: the FULL list of assigned category ids in the desired display
+ *   order (the backend writes sort_order 1..N for every one of them).
+ * - statuses: per-category activation override. is_active=true opts IN to a
+ *   platform-deactivated category, false forces it off, null reverts to
+ *   inheriting the platform setting.
+ */
+export const useCategoryPreferencesMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: {
+      order?: number[]
+      statuses?: { id: number; is_active: boolean | null }[]
+    }) => {
+      const { data } = await api.put<{ message: string }>(
+        "/company/category-preferences",
+        payload
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["catalogConfig"] })
+      toast.success(data.message)
+    },
+    onError: (error: unknown) => {
+      if (error instanceof AxiosError && error.response?.data?.message) {
+        toast.error(error.response.data.message)
+      } else {
+        toast.error("Failed to update category preferences.")
       }
     },
   })

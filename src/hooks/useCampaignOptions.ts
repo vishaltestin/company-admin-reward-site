@@ -45,15 +45,24 @@ export interface CampaignTemplate {
 
 export const useCampaignLandingPages = (
   eventId?: number | null,
-  tab: "global" | "variations" = "global"
+  tab: "global" | "variations" = "global",
+  // Accepts the campaign store's FULL reward_type union. "physical_bulk"
+  // (wholesale campaigns) has no online claim page, and the API only filters
+  // for "link" (its validator rejects any value outside points/code/link),
+  // so the param is forwarded only for link campaigns.
+  rewardType?: "points" | "code" | "link" | "physical_bulk" | null
 ) => {
   return useQuery({
-    queryKey: ["campaign-landing-pages", eventId, tab],
+    queryKey: ["campaign-landing-pages", eventId, tab, rewardType ?? null],
     queryFn: async () => {
       const { data } = await api.get<{ data: CampaignTemplate[] }>(
         `/landing-pages`,
         {
-          params: { event_id: eventId, tab },
+          params: {
+            event_id: eventId,
+            tab,
+            ...(rewardType === "link" ? { reward_type: "link" } : {}),
+          },
         }
       )
       return data.data

@@ -30,7 +30,7 @@ export function Step9OnlineEmail() {
     isLoading,
     refetch,
     isRefetching,
-  } = useCampaignEmailTemplates(storeData.event_id, activeTab)
+  } = useCampaignEmailTemplates(storeData.event_id ?? null, activeTab)
 
   const {
     handleSubmit,
@@ -129,7 +129,8 @@ export function Step9OnlineEmail() {
                       onClick={(e) => {
                         e.stopPropagation()
                         window.open(
-                          // `${import.meta.env.BASE_URL}/email-templates/editor/${template.id}`,
+                          // Admin pages are served at the app root — no
+                          // /admin prefix.
                           `/email-templates/editor/${template.id}`,
                           "_blank"
                         )

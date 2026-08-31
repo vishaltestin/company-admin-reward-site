@@ -183,7 +183,11 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
                 </div>
                 <DataRow
                   label="Landing Page Template"
-                  value={`ID: ${data.landing_page_template_id}`}
+                  value={
+                    data.landing_page_template_id
+                      ? `ID: ${data.landing_page_template_id}`
+                      : "Not set (optional — skipped)"
+                  }
                 />
                 <DataRow
                   label="Email Template"

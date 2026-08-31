@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import {
   Eye,
   EyeOff,
@@ -8,11 +8,15 @@ import {
   ChevronRight,
   ChevronDown,
   Search,
+  ArrowUp,
+  ArrowDown,
+  Power,
 } from "lucide-react"
 
 import {
   useCatalogConfigQuery,
   useCatalogVisibilityMutation,
+  useCategoryPreferencesMutation,
   type CatalogConfigResponse,
   type CatalogCategory,
   type CatalogProduct,
@@ -30,6 +34,8 @@ import { Label } from "@/components/ui/label"
 
 function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
   const { mutate: saveVisibility, isPending } = useCatalogVisibilityMutation()
+  const { mutate: savePreferences, isPending: isSavingPrefs } =
+    useCategoryPreferencesMutation()
 
   const [hiddenCategories, setHiddenCategories] = useState<number[]>(
     data.hidden_category_ids || []
@@ -37,6 +43,63 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
   const [hiddenProducts, setHiddenProducts] = useState<number[]>(
     data.hidden_product_ids || []
   )
+
+  // HR category ordering: position map over the assigned categories. The
+  // initial positions follow the backend's display order (pivot ?? global
+  // sort), and Save sends the full ordered list back.
+  const [categoryOrder, setCategoryOrder] = useState<Record<number, number>>(
+    () => Object.fromEntries(data.categories.map((c, i) => [c.id, i]))
+  )
+  const initialOrderRef = useRef(data.categories.map((c) => c.id).join(","))
+
+  const categories = useMemo(
+    () =>
+      [...data.categories].sort(
+        (a, b) => (categoryOrder[a.id] ?? 9999) - (categoryOrder[b.id] ?? 9999)
+      ),
+    [data.categories, categoryOrder]
+  )
+
+  const siblingKey = (c: CatalogCategory) =>
+    c.parent_id && categories.some((p) => p.id === c.parent_id)
+      ? c.parent_id
+      : "root"
+
+  const moveCategory = (categoryId: number, dir: -1 | 1) => {
+    const target = categories.find((c) => c.id === categoryId)
+    if (!target) return
+
+    const siblings = categories
+      .filter((c) => siblingKey(c) === siblingKey(target))
+      .sort(
+        (a, b) => (categoryOrder[a.id] ?? 9999) - (categoryOrder[b.id] ?? 9999)
+      )
+
+    const idx = siblings.findIndex((c) => c.id === categoryId)
+    const neighbor = dir === -1 ? siblings[idx - 1] : siblings[idx + 1]
+    if (!neighbor) return
+
+    setCategoryOrder((prev) => ({
+      ...prev,
+      [categoryId]: prev[neighbor.id],
+      [neighbor.id]: prev[categoryId],
+    }))
+  }
+
+  // "Show anyway" for platform-deactivated categories: pivot override on/off.
+  const togglePlatformOverride = (category: CatalogCategory) => {
+    savePreferences({
+      statuses: [
+        {
+          id: category.id,
+          is_active: category.pivot_is_active === true ? null : true,
+        },
+      ],
+    })
+  }
+
+  const orderDirty =
+    categories.map((c) => c.id).join(",") !== initialOrderRef.current
   const [expandedCategories, setExpandedCategories] = useState<number[]>([])
 
   const [searchQuery, setSearchQuery] = useState("")
@@ -49,7 +112,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
 
   const isEffectivelyHidden = (categoryId: number): boolean => {
     if (hiddenCategories.includes(categoryId)) return true
-    const category = data.categories.find((c) => c.id === categoryId)
+    const category = categories.find((c) => c.id === categoryId)
     if (category && category.parent_id) {
       return isEffectivelyHidden(category.parent_id)
     }
@@ -58,7 +121,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
 
   const getDescendantCategoryIds = (categoryId: number): number[] => {
     let ids = [categoryId]
-    const children = data.categories.filter((c) => c.parent_id === categoryId)
+    const children = categories.filter((c) => c.parent_id === categoryId)
     children.forEach((child) => {
       ids = [...ids, ...getDescendantCategoryIds(child.id)]
     })
@@ -102,12 +165,14 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
       hidden_category_ids: hiddenCategories,
       hidden_product_ids: hiddenProducts,
     })
+    if (orderDirty) {
+      savePreferences({ order: categories.map((c) => c.id) })
+    }
   }
 
-  const rootCategories = data.categories.filter(
+  const rootCategories = categories.filter(
     (c) =>
-      !c.parent_id ||
-      !data.categories.some((parent) => parent.id === c.parent_id)
+      !c.parent_id || !categories.some((parent) => parent.id === c.parent_id)
   )
 
   const CategoryNode = ({
@@ -117,7 +182,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     category: CatalogCategory
     depth?: number
   }) => {
-    const children = data.categories.filter((c) => c.parent_id === category.id)
+    const children = categories.filter((c) => c.parent_id === category.id)
     const hasChildren = children.length > 0
     const isExpanded = expandedCategories.includes(category.id)
 
@@ -133,7 +198,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
             isActive
               ? "border border-primary/20 bg-primary/10"
               : "border border-transparent hover:bg-gray-100"
-          } ${isEffectivelyHiddenState ? "opacity-50 grayscale" : ""}`}
+          } ${isEffectivelyHiddenState || category.is_active === false ? "opacity-50 grayscale" : ""}`}
           style={{ paddingLeft: `${depth * 1.5 + 0.5}rem` }}
         >
           <div className="flex items-center gap-2 overflow-hidden">
@@ -160,28 +225,92 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
             >
               {category.name}
             </span>
+            {category.global_is_active === false && (
+              <span
+                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-bold tracking-wide uppercase ${
+                  category.pivot_is_active === true
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-red-100 text-red-600"
+                }`}
+                title={
+                  category.pivot_is_active === true
+                    ? "Platform has this category off — you are overriding it on"
+                    : "Deactivated by the platform — use the power icon to show it anyway"
+                }
+              >
+                {category.pivot_is_active === true ? "Override" : "Off"}
+              </span>
+            )}
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-7 w-7 shrink-0 ${isDirectlyHidden ? "text-gray-400" : "text-green-600"}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleCategory(category.id)
-            }}
-            title={
-              isEffectivelyHiddenState && !isDirectlyHidden
-                ? "Hidden by parent category"
-                : ""
-            }
-          >
-            {isDirectlyHidden ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-gray-400 hover:text-gray-700"
+              onClick={(e) => {
+                e.stopPropagation()
+                moveCategory(category.id, -1)
+              }}
+              title="Move up (order applies on your storefront)"
+            >
+              <ArrowUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-gray-400 hover:text-gray-700"
+              onClick={(e) => {
+                e.stopPropagation()
+                moveCategory(category.id, 1)
+              }}
+              title="Move down (order applies on your storefront)"
+            >
+              <ArrowDown className="h-3.5 w-3.5" />
+            </Button>
+            {category.global_is_active === false && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-6 w-6 ${
+                  category.pivot_is_active === true
+                    ? "text-amber-600"
+                    : "text-gray-300 hover:text-amber-600"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  togglePlatformOverride(category)
+                }}
+                title={
+                  category.pivot_is_active === true
+                    ? "Shown by your override (platform has it off) — click to revert to the platform setting"
+                    : "Platform has deactivated this category — click to show it on your storefront anyway"
+                }
+              >
+                <Power className="h-3.5 w-3.5" />
+              </Button>
             )}
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-7 w-7 ${isDirectlyHidden ? "text-gray-400" : "text-green-600"}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleCategory(category.id)
+              }}
+              title={
+                isEffectivelyHiddenState && !isDirectlyHidden
+                  ? "Hidden by parent category"
+                  : ""
+              }
+            >
+              {isDirectlyHidden ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
 
         {hasChildren && isExpanded && (
@@ -195,7 +324,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     )
   }
 
-  const activeCategory = data.categories.find((c) => c.id === activeCategoryId)
+  const activeCategory = categories.find((c) => c.id === activeCategoryId)
   const isCategoryHiddenState = activeCategoryId
     ? isEffectivelyHidden(activeCategoryId)
     : false
@@ -204,7 +333,7 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
     if (!activeCategoryId) return []
 
     const relevantCategoryIds = getDescendantCategoryIds(activeCategoryId)
-    const relevantCategories = data.categories.filter((c) =>
+    const relevantCategories = categories.filter((c) =>
       relevantCategoryIds.includes(c.id)
     )
 
@@ -237,16 +366,18 @@ function CatalogCurationInner({ data }: { data: CatalogConfigResponse }) {
         <div>
           <CardTitle>Catalog Curation</CardTitle>
           <CardDescription>
-            Filter by price and hide products from your storefront.
+            Hide products, reorder categories with the arrows (saved as your
+            storefront's order), and opt in to platform-deactivated categories
+            with the power icon.
           </CardDescription>
         </div>
-        <Button onClick={handleSave} disabled={isPending}>
-          {isPending ? (
+        <Button onClick={handleSave} disabled={isPending || isSavingPrefs}>
+          {isPending || isSavingPrefs ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Save className="mr-2 h-4 w-4" />
           )}
-          Save Visibility Settings
+          Save Visibility {orderDirty ? "& Order" : "Settings"}
         </Button>
       </CardHeader>
 

@@ -9,6 +9,22 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useCampaignStore } from "@/store/useCampaignStore"
 import { step11OnlineSchema, type Step11OnlineData } from "../schemas"
 
+/**
+ * Current moment as a datetime-local string (YYYY-MM-DDTHH:mm) in the
+ * user's timezone — the value format the picker compares against.
+ */
+const nowLocal = () => {
+  const d = new Date()
+  d.setSeconds(0, 0)
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16)
+}
+
+/** datetime-local value → comparable number (0 for empty strings). */
+const toEpoch = (value: string | undefined | null) =>
+  value ? new Date(value).getTime() : 0
+
 export function Step11OnlineSchedule() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
 
@@ -32,10 +48,26 @@ export function Step11OnlineSchedule() {
 
   // const sendInitialReminder = watch("send_initial_reminder")
   // const sendExpiryReminder = watch("send_expiry_reminder")
-  const [sendInitialReminder, sendExpiryReminder] = useWatch({
-    control,
-    name: ["send_initial_reminder", "send_expiry_reminder"],
-  })
+  const [sendInitialReminder, sendExpiryReminder, startsAt, expiresAt] =
+    useWatch({
+      control,
+      name: [
+        "send_initial_reminder",
+        "send_expiry_reminder",
+        "starts_at",
+        "expires_at",
+      ],
+    })
+
+  // ── Date bounds (native pickers can't select outside these) ──────────
+  // Launch:  now or later.  Expiry: after launch.  Follow-up reminder:
+  // between launch and expiry.  Urgent reminder: now → expiry.
+  const minLaunch = nowLocal()
+  const minExpiry = toEpoch(startsAt) ? startsAt! : minLaunch
+  const minInitialReminder = toEpoch(startsAt) ? startsAt! : minLaunch
+  const maxInitialReminder = toEpoch(expiresAt) ? expiresAt! : undefined
+  const minExpiryReminder = minLaunch
+  const maxExpiryReminder = toEpoch(expiresAt) ? expiresAt! : undefined
 
   const onSubmit = (formData: Step11OnlineData) => {
     updateData({
@@ -77,11 +109,16 @@ export function Step11OnlineSchedule() {
             <Input
               id="starts_at"
               type="datetime-local"
+              min={minLaunch}
               {...register("starts_at")}
             />
-            {errors.starts_at && (
+            {errors.starts_at ? (
               <p className="text-sm font-medium text-destructive">
                 {errors.starts_at.message}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Can't be in the past — pick a launch from now onwards.
               </p>
             )}
           </div>
@@ -93,11 +130,19 @@ export function Step11OnlineSchedule() {
             <Input
               id="expires_at"
               type="datetime-local"
+              min={minExpiry}
               {...register("expires_at")}
             />
-            <p className="text-xs text-gray-500">
-              Leave blank if rewards never expire.
-            </p>
+            {errors.expires_at ? (
+              <p className="text-sm font-medium text-destructive">
+                {errors.expires_at.message}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Leave blank if rewards never expire. Must be after the launch
+                date.
+              </p>
+            )}
           </div>
         </div>
 
@@ -106,7 +151,7 @@ export function Step11OnlineSchedule() {
             <CalendarClock className="h-5 w-5" /> Automated Reminders
           </h3>
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-4 rounded-xl border bg-gray-50 p-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -128,11 +173,18 @@ export function Step11OnlineSchedule() {
                     id="reminder_initial_date"
                     type="datetime-local"
                     className="bg-white"
+                    min={minInitialReminder}
+                    max={maxInitialReminder}
                     {...register("reminder_initial_date")}
                   />
-                  {errors.reminder_initial_date && (
+                  {errors.reminder_initial_date ? (
                     <p className="text-sm font-medium text-destructive">
                       {errors.reminder_initial_date.message}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      Must be after launch
+                      {maxInitialReminder ? " and before expiration" : ""}.
                     </p>
                   )}
                 </div>
@@ -160,11 +212,18 @@ export function Step11OnlineSchedule() {
                     id="reminder_expiry_date"
                     type="datetime-local"
                     className="bg-white"
+                    min={minExpiryReminder}
+                    max={maxExpiryReminder}
                     {...register("reminder_expiry_date")}
                   />
-                  {errors.reminder_expiry_date && (
+                  {errors.reminder_expiry_date ? (
                     <p className="text-sm font-medium text-destructive">
                       {errors.reminder_expiry_date.message}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      Must be in the future
+                      {maxExpiryReminder ? " and before expiration" : ""}.
                     </p>
                   )}
                 </div>

@@ -3,15 +3,22 @@ import { useParams, useNavigate } from "react-router-dom"
 import {
   ArrowLeft,
   Calendar,
+  CalendarClock,
+  CheckCircle2,
+  Clock,
   CreditCard,
+  ExternalLink,
+  Gift,
   LayoutTemplate,
   Loader2,
+  Mail,
   MapPin,
   Megaphone,
   MessageSquare,
   Package,
   Settings2,
   Users,
+  Wallet,
   XCircle,
 } from "lucide-react"
 
@@ -29,6 +36,8 @@ import {
   useCampaignQuery,
   useCancelCampaignMutation,
 } from "@/hooks/useCampaigns"
+import { useLandingPageDetailQuery } from "@/hooks/landing-pages"
+import { useTemplateQuery } from "@/hooks/templates"
 
 interface BulkItem {
   product_id: string | number
@@ -37,6 +46,39 @@ interface BulkItem {
   variant_name: string
   quantity: number
 }
+
+/** Per-recipient reward record — added to the campaign detail payload. */
+interface CampaignEntitlement {
+  id: number
+  reward_value: number | string
+  claim_code?: string | null
+  is_claimed: boolean
+  claimed_at?: string | null
+  expires_at?: string | null
+  created_at?: string | null
+  user?: { first_name?: string; last_name?: string; email?: string } | null
+}
+
+interface Campaign {
+  id: number
+  name: string
+  description?: string | null
+  distribution_type: string
+  reward_type?: string
+  budget_locked: number | string
+  total_budget: number | string
+  total_recipients: number
+  status: string
+  starts_at: string
+  expires_at?: string | null
+  created_at: string
+  custom_event_name?: string | null
+  config_json?: Record<string, unknown>
+  vertical?: { name?: string } | null
+  event?: { title?: string } | null
+  entitlements?: CampaignEntitlement[] | null
+}
+
 interface DetailRowProps {
   label: string
   value: React.ReactNode
@@ -54,6 +96,87 @@ const DetailRow = ({ label, value, icon: Icon }: DetailRowProps) => (
     </span>
   </div>
 )
+
+const Card = ({
+  icon: Icon,
+  title,
+  children,
+  className = "",
+}: {
+  icon: React.ElementType
+  title: string
+  children: React.ReactNode
+  className?: string
+}) => (
+  <div className={`rounded-xl border bg-white p-6 shadow-sm ${className}`}>
+    <h3 className="mb-4 flex items-center font-bold text-gray-900">
+      <Icon className="mr-2 h-5 w-5 text-primary" /> {title}
+    </h3>
+    {children}
+  </div>
+)
+
+const formatDate = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "—"
+
+const inr = (value: number | string | null | undefined) =>
+  `₹${Number(value ?? 0).toLocaleString("en-IN")}`
+
+/**
+ * Resolves a landing-page template id to its real name (falls back to the
+ * id while loading / if deleted), with a direct preview link.
+ */
+const LandingTemplateName = ({ id }: { id: number }) => {
+  const { data: template, isLoading } = useLandingPageDetailQuery(String(id))
+  return (
+    <span className="inline-flex items-center gap-2">
+      {isLoading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+      ) : (
+        <>
+          <span>{template?.title || template?.name || `Template #${id}`}</span>
+          <a
+            href={`/landing-pages/preview/${id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+          >
+            Preview <ExternalLink className="h-3 w-3" />
+          </a>
+        </>
+      )}
+    </span>
+  )
+}
+
+/** Resolves an email template id to its real name, with an edit link. */
+const EmailTemplateName = ({ id }: { id: number }) => {
+  const { data: template, isLoading } = useTemplateQuery(String(id))
+  return (
+    <span className="inline-flex items-center gap-2">
+      {isLoading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+      ) : (
+        <>
+          <span>{template?.name || `Template #${id}`}</span>
+          <a
+            href={`/email-templates/editor/${id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+          >
+            Open <ExternalLink className="h-3 w-3" />
+          </a>
+        </>
+      )}
+    </span>
+  )
+}
 
 export default function CampaignDetails() {
   const { id } = useParams<{ id: string }>()
@@ -100,13 +223,32 @@ export default function CampaignDetails() {
     )
   }
 
-  const isOnline = campaign.distribution_type === "online"
-  const isBulk = campaign.distribution_type === "bulk"
-  const config = campaign.config_json || {}
+  const data = campaign as unknown as Campaign
+  const isOnline = data.distribution_type === "online"
+  const isBulk = data.distribution_type === "bulk"
+  const config = (data.config_json || {}) as Record<string, any>
 
   const canCancel = ["processing", "inquiry_pending", "active"].includes(
-    campaign.status
+    data.status
   )
+
+  // ── Recipient / claim stats (online campaigns) ──────────────────────
+  const entitlements = data.entitlements ?? []
+  const claimed = entitlements.filter((e) => e.is_claimed)
+  const claimedCount = claimed.length
+  const claimPct =
+    entitlements.length > 0
+      ? Math.round((claimedCount / entitlements.length) * 100)
+      : 0
+  const valueClaimed = claimed.reduce(
+    (sum, e) => sum + Number(e.reward_value ?? 0),
+    0
+  )
+  const perRecipient =
+    entitlements[0]?.reward_value ??
+    (data.total_recipients > 0
+      ? Number(data.total_budget) / data.total_recipients
+      : null)
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -155,12 +297,12 @@ export default function CampaignDetails() {
           </Button>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              {campaign.name}
+              {data.name}
             </h1>
-            {getStatusBadge(campaign.status)}
+            {getStatusBadge(data.status)}
           </div>
           <p className="mt-1 text-gray-500">
-            {campaign.description || "No description provided."}
+            {data.description || "No description provided."}
           </p>
         </div>
 
@@ -175,10 +317,7 @@ export default function CampaignDetails() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="mb-4 flex items-center font-bold text-gray-900">
-            <Settings2 className="mr-2 h-5 w-5 text-primary" /> Core Information
-          </h3>
+        <Card icon={Settings2} title="Core Information">
           <div className="space-y-1">
             <DetailRow
               label="Distribution Method"
@@ -188,42 +327,40 @@ export default function CampaignDetails() {
             />
             <DetailRow
               label="Target Audience"
-              value={campaign.vertical?.name}
+              value={data.vertical?.name}
               icon={Users}
             />
             <DetailRow
               label="Occasion / Event"
-              value={campaign.custom_event_name || campaign.event?.title}
+              value={data.custom_event_name || data.event?.title}
               icon={Calendar}
             />
             <DetailRow
-              label="Created On"
-              value={new Date(campaign.created_at).toLocaleDateString()}
+              label="Reward Value / Recipient"
+              value={isOnline && perRecipient != null ? inr(perRecipient) : "—"}
+              icon={Gift}
             />
+            <DetailRow label="Created On" value={formatDate(data.created_at)} />
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h3 className="mb-4 flex items-center font-bold text-gray-900">
-            <CreditCard className="mr-2 h-5 w-5 text-primary" /> Scope &
-            Financials
-          </h3>
+        <Card icon={CreditCard} title="Scope & Financials">
           <div className="space-y-1">
             {isOnline ? (
               <>
                 <DetailRow
                   label="Reward Mechanism"
-                  value={campaign.reward_type?.toUpperCase()}
+                  value={data.reward_type?.toUpperCase()}
                 />
                 <DetailRow
                   label="Total Recipients"
-                  value={campaign.total_recipients}
+                  value={data.total_recipients}
                 />
                 <DetailRow
                   label="Escrow Budget Locked"
                   value={
                     <span className="font-bold text-green-600">
-                      ₹{Number(campaign.budget_locked).toLocaleString()}
+                      {inr(data.budget_locked)}
                     </span>
                   }
                 />
@@ -231,9 +368,18 @@ export default function CampaignDetails() {
                   label="Total Budget"
                   value={
                     <span className="font-bold text-green-600">
-                      ₹{Number(campaign.total_budget).toLocaleString()}
+                      {inr(data.total_budget)}
                     </span>
                   }
+                />
+                <DetailRow
+                  label="Reward Value Claimed"
+                  value={
+                    <span className="font-bold text-blue-700">
+                      {inr(valueClaimed)}
+                    </span>
+                  }
+                  icon={Wallet}
                 />
               </>
             ) : (
@@ -259,50 +405,208 @@ export default function CampaignDetails() {
               </>
             )}
           </div>
-        </div>
+        </Card>
 
         {isOnline && (
-          <div className="rounded-xl border bg-white p-6 shadow-sm md:col-span-2">
-            <h3 className="mb-4 flex items-center font-bold text-gray-900">
-              <LayoutTemplate className="mr-2 h-5 w-5 text-primary" />{" "}
-              Experience & Communication
-            </h3>
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-1">
-                <DetailRow
-                  label="Landing Page ID"
-                  value={config.landing_page_template_id}
-                />
-                <DetailRow
-                  label="Email Template ID"
-                  value={config.email_template_id}
-                />
-                <DetailRow
-                  label="Launch Date"
-                  value={new Date(campaign.starts_at).toLocaleString()}
-                />
-                <DetailRow
-                  label="Expiration"
-                  value={
-                    campaign.expires_at
-                      ? new Date(campaign.expires_at).toLocaleString()
-                      : "Never"
-                  }
+          <>
+            {/* ── Claim progress ─────────────────────────────────────── */}
+            <Card
+              icon={CheckCircle2}
+              title="Claim Status"
+              className="md:col-span-2"
+            >
+              <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+                <span className="text-2xl font-bold text-gray-900">
+                  {claimedCount}{" "}
+                  <span className="text-base font-medium text-gray-500">
+                    of {entitlements.length || data.total_recipients} claimed
+                  </span>
+                </span>
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-800"
+                >
+                  {claimPct}% completion
+                </Badge>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full bg-green-500 transition-all"
+                  style={{ width: `${claimPct}%` }}
                 />
               </div>
-              <div className="rounded-lg border bg-gray-50 p-4">
-                <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">
-                  SMS Payload
-                </span>
-                <p className="mt-2 text-sm whitespace-pre-wrap text-gray-900">
-                  {config.sms_content}
-                </p>
-                <div className="mt-2 inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                  CTA: {config.sms_cta}
+            </Card>
+
+            {/* ── Schedule & reminders ───────────────────────────────── */}
+            <Card
+              icon={CalendarClock}
+              title="Schedule & Reminders"
+              className="md:col-span-2"
+            >
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <DetailRow
+                    label="Launch Date"
+                    value={formatDate(data.starts_at)}
+                  />
+                  <DetailRow
+                    label="Expiration"
+                    value={
+                      data.expires_at ? formatDate(data.expires_at) : "Never"
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <DetailRow
+                    label="Follow-up Reminder"
+                    value={
+                      config.reminder_initial_date ? (
+                        formatDate(config.reminder_initial_date)
+                      ) : (
+                        <span className="text-gray-400">Not scheduled</span>
+                      )
+                    }
+                    icon={Clock}
+                  />
+                  <DetailRow
+                    label="Expiry Reminder"
+                    value={
+                      config.reminder_expiry_date ? (
+                        formatDate(config.reminder_expiry_date)
+                      ) : (
+                        <span className="text-gray-400">Not scheduled</span>
+                      )
+                    }
+                    icon={Clock}
+                  />
                 </div>
               </div>
-            </div>
-          </div>
+            </Card>
+
+            {/* ── Experience & communication ─────────────────────────── */}
+            <Card
+              icon={LayoutTemplate}
+              title="Experience & Communication"
+              className="md:col-span-2"
+            >
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <DetailRow
+                    label="Landing Page"
+                    value={
+                      config.landing_page_template_id ? (
+                        <LandingTemplateName
+                          id={Number(config.landing_page_template_id)}
+                        />
+                      ) : (
+                        "—"
+                      )
+                    }
+                  />
+                  <DetailRow
+                    label="Email Template"
+                    value={
+                      config.email_template_id ? (
+                        <EmailTemplateName
+                          id={Number(config.email_template_id)}
+                        />
+                      ) : (
+                        "—"
+                      )
+                    }
+                    icon={Mail}
+                  />
+                  <DetailRow
+                    label="Catalog Products"
+                    value={
+                      Array.isArray(config.catalog_selection)
+                        ? config.catalog_selection.length
+                        : "Entire catalog"
+                    }
+                  />
+                </div>
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">
+                    SMS Payload
+                  </span>
+                  <p className="mt-2 text-sm whitespace-pre-wrap text-gray-900">
+                    {config.sms_content || "No SMS configured."}
+                  </p>
+                  {config.sms_cta && (
+                    <div className="mt-2 inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                      CTA: {config.sms_cta}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            {/* ── Recipient table ────────────────────────────────────── */}
+            {entitlements.length > 0 && (
+              <div className="overflow-hidden rounded-xl border bg-white shadow-sm md:col-span-2">
+                <div className="border-b p-6">
+                  <h3 className="flex items-center font-bold text-gray-900">
+                    <Users className="mr-2 h-5 w-5 text-primary" /> Recipients &
+                    Claim Status
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {entitlements.length} reward
+                    {entitlements.length === 1 ? "" : "s"} issued for this
+                    campaign.
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-50 font-medium text-gray-500">
+                      <tr>
+                        <th className="px-6 py-3">Recipient</th>
+                        <th className="px-6 py-3">Email</th>
+                        <th className="px-6 py-3 text-right">Reward Value</th>
+                        {data.reward_type === "code" && (
+                          <th className="px-6 py-3">Claim Code</th>
+                        )}
+                        <th className="px-6 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {entitlements.map((e) => (
+                        <tr key={e.id} className="hover:bg-gray-50/50">
+                          <td className="px-6 py-3 font-medium text-gray-900">
+                            {e.user?.first_name || e.user?.last_name
+                              ? `${e.user?.first_name ?? ""} ${e.user?.last_name ?? ""}`.trim()
+                              : "—"}
+                          </td>
+                          <td className="px-6 py-3 text-gray-600">
+                            {e.user?.email || "—"}
+                          </td>
+                          <td className="px-6 py-3 text-right font-semibold">
+                            {inr(e.reward_value)}
+                          </td>
+                          {data.reward_type === "code" && (
+                            <td className="px-6 py-3 font-mono text-xs">
+                              {e.claim_code || "—"}
+                            </td>
+                          )}
+                          <td className="px-6 py-3">
+                            {e.is_claimed ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Claimed {formatDate(e.claimed_at)}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                                <Clock className="h-3 w-3" /> Pending
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {isBulk && (
@@ -360,7 +664,6 @@ export default function CampaignDetails() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {/* 5. Fixed 'any' in map */}
                     {config.bulk_items?.map((item: BulkItem, idx: number) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
                         <td className="px-6 py-3">{item.product_name}</td>
@@ -383,7 +686,7 @@ export default function CampaignDetails() {
           <DialogHeader>
             <DialogTitle className="text-red-600">Cancel Campaign?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to cancel <strong>{campaign.name}</strong>?
+              Are you sure you want to cancel <strong>{data.name}</strong>?
               {isOnline
                 ? " The escrowed budget will be instantly refunded to your company wallet."
                 : " This will withdraw your wholesale inquiry and our team will stop processing it."}

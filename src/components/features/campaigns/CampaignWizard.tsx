@@ -75,7 +75,7 @@ export function CampaignWizard() {
       }
       baseSteps.push({
         id: "landing_page",
-        title: "Web Experience",
+        title: "Web Experience (Optional)",
         component: Step8OnlineLanding,
       })
       baseSteps.push({

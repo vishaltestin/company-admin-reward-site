@@ -34,6 +34,22 @@ import {
   type CatalogVariant,
 } from "@/hooks/useCatalogConfig"
 
+/**
+ * The /catalog-config API already returns product images as ABSOLUTE URLs
+ * (backend maps them with asset('storage/...')). Prepending the backend
+ * origin again produced broken srcs like
+ * "http://localhost:8000/storage/http://localhost:8000/storage/qa/phone-main.png".
+ * Pass absolute URLs (and data URIs) through untouched; only bare storage
+ * paths get the origin prefix, so this stays correct even if the endpoint
+ * ever reverts to relative paths.
+ */
+const storageUrl = (value?: string | null): string =>
+  !value
+    ? ""
+    : /^https?:\/\//i.test(value) || value.startsWith("data:")
+      ? value
+      : `${import.meta.env.VITE_BACKEND_URL}/storage/${value}`
+
 export function Step5BulkCatalog() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
   const { data: catalogConfig, isLoading } = useCatalogConfigQuery()
@@ -333,7 +349,7 @@ export function Step5BulkCatalog() {
                       )}
                       {product.main_image ? (
                         <img
-                          src={`${import.meta.env.VITE_BACKEND_URL}/storage/${product.main_image}`}
+                          src={storageUrl(product.main_image)}
                           alt={product.name}
                           className="h-full w-full object-contain transition-transform group-hover:scale-105"
                         />
@@ -384,7 +400,7 @@ export function Step5BulkCatalog() {
                 <div className="flex aspect-square w-full items-center justify-center rounded-lg border bg-gray-50 p-2 md:w-1/3">
                   {activeProduct.main_image ? (
                     <img
-                      src={`${import.meta.env.VITE_BACKEND_URL}/storage/${activeProduct.main_image}`}
+                      src={storageUrl(activeProduct.main_image)}
                       alt={activeProduct.name}
                       className="h-full w-full object-contain"
                     />

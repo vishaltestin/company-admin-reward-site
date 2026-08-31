@@ -27,7 +27,7 @@ export const useSubAdminMutations = () => {
     }) => {
       if (payload.id) {
         const { data } = await api.put(
-          `/admin/sub-admins/${payload.id}`,
+          `/sub-admins/${payload.id}`,
           payload.data
         )
         return data
