@@ -66,12 +66,9 @@ export const step6OnlineSchema = z
 export type Step6OnlineData = z.infer<typeof step6OnlineSchema>
 
 export const step8OnlineSchema = z.object({
-  // Optional by design: the wizard offers "Skip for now", and the
-  // reward-link filter can drop a previously picked template. A campaign is
-  // valid without a landing page — employees then get the standard claim
-  // page (ClaimController's default schema). The Continue button stays
-  // disabled until a template is picked, so "required" is enforced in the
-  // UI, not here.
+  // Points/code may use the built-in congratulations page. Link campaigns
+  // are additionally required to select a template in Step8OnlineLanding
+  // and in CampaignController, so bypassing the UI cannot skip the picker.
   landing_page_template_id: z.number().optional(),
 })
 export type Step8OnlineData = z.infer<typeof step8OnlineSchema>
@@ -101,11 +98,11 @@ export const step11OnlineSchema = z
     expires_at: z.string().optional(),
 
     send_initial_reminder: z.boolean(),
-    reminder_initial_date: z.string().optional(),
+    reminder_initial_dates: z.array(z.string()).optional(),
     reminder_initial_template_id: z.number().optional(),
 
     send_expiry_reminder: z.boolean(),
-    reminder_expiry_date: z.string().optional(),
+    reminder_expiry_dates: z.array(z.string()).optional(),
     reminder_expiry_template_id: z.number().optional(),
   })
   .superRefine((data, ctx) => {
@@ -117,6 +114,8 @@ export const step11OnlineSchema = z
     ].join("-")
     const launchDate = data.starts_at.slice(0, 10)
     const expiryDate = data.expires_at?.slice(0, 10)
+    const initialDates = data.reminder_initial_dates ?? []
+    const expiryDates = data.reminder_expiry_dates ?? []
 
     if (data.expires_at && data.expires_at <= data.starts_at) {
       ctx.addIssue({
@@ -127,47 +126,52 @@ export const step11OnlineSchema = z
     }
 
     if (data.send_initial_reminder) {
-      if (!data.reminder_initial_date) {
+      if (initialDates.length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Please set a reminder date.",
-          path: ["reminder_initial_date"],
+          message: "Add at least one follow-up reminder date.",
+          path: ["reminder_initial_dates"],
         })
-      } else {
-        if (data.reminder_initial_date <= launchDate) {
+      }
+
+      initialDates.forEach((date, index) => {
+        const path: (string | number)[] = ["reminder_initial_dates", index]
+        if (!date) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Choose a reminder date.",
+            path,
+          })
+          return
+        }
+        if (initialDates.indexOf(date) !== index) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "This follow-up date is already in the list.",
+            path,
+          })
+        }
+        if (date <= launchDate) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "The follow-up date must be after the launch date.",
-            path: ["reminder_initial_date"],
+            path,
           })
         }
-        if (data.reminder_initial_date <= todayString) {
+        if (date <= todayString) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Choose a future date for the follow-up reminder.",
-            path: ["reminder_initial_date"],
+            path,
           })
         }
-        if (expiryDate && data.reminder_initial_date >= expiryDate) {
+        if (expiryDate && date >= expiryDate) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "The follow-up reminder must be before expiration.",
-            path: ["reminder_initial_date"],
+            path,
           })
         }
-      }
-    }
-
-    if (
-      data.send_initial_reminder &&
-      data.send_expiry_reminder &&
-      data.reminder_initial_date &&
-      data.reminder_initial_date === data.reminder_expiry_date
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Choose different dates for the two reminders.",
-        path: ["reminder_expiry_date"],
       })
     }
 
@@ -175,33 +179,57 @@ export const step11OnlineSchema = z
       if (!data.expires_at) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message:
-            "Set an expiration date before scheduling an expiry reminder.",
+          message: "Set an expiration date before scheduling expiry reminders.",
           path: ["expires_at"],
         })
       }
-      if (!data.reminder_expiry_date) {
+      if (expiryDates.length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Please set an expiry reminder date.",
-          path: ["reminder_expiry_date"],
+          message: "Add at least one expiry reminder date.",
+          path: ["reminder_expiry_dates"],
         })
-      } else {
-        if (data.reminder_expiry_date <= todayString) {
+      }
+
+      expiryDates.forEach((date, index) => {
+        const path: (string | number)[] = ["reminder_expiry_dates", index]
+        if (!date) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Choose an expiry reminder date.",
+            path,
+          })
+          return
+        }
+        if (expiryDates.indexOf(date) !== index) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "This expiry date is already in the list.",
+            path,
+          })
+        }
+        if (date <= todayString) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Choose a future date for the expiry reminder.",
-            path: ["reminder_expiry_date"],
+            path,
           })
         }
-        if (expiryDate && data.reminder_expiry_date >= expiryDate) {
+        if (expiryDate && date >= expiryDate) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "The expiry reminder must be before the expiration date.",
-            path: ["reminder_expiry_date"],
+            path,
           })
         }
-      }
+        if (data.send_initial_reminder && initialDates.includes(date)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "This date is already used for a follow-up reminder.",
+            path,
+          })
+        }
+      })
     }
   })
 export type Step11OnlineData = z.infer<typeof step11OnlineSchema>

@@ -22,7 +22,10 @@ export default function LandingPagePreview() {
     )
   }
 
-  const blocks = (template.page_schema || []) as PageBlock[]
+  const blocks = ((template.page_schema || []) as PageBlock[]).filter(
+    (block) =>
+      template.reward_type === "link" || block.type !== "RewardSelector"
+  )
   const theme = (template.global_theme_tokens as ThemeTokens) || {
     primaryColor: "#2563eb",
     textColor: "#111827",

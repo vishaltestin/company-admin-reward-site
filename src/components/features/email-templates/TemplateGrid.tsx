@@ -11,6 +11,11 @@ import {
 import { useTemplateMutations, useTemplatesQuery } from "@/hooks/templates"
 import { useNavigate } from "react-router-dom"
 import { TemplatePreviewModal } from "./TemplatePreviewModal"
+import {
+  RewardTypeBadge,
+  RewardTypeFilter,
+  type RewardTypeFilterValue,
+} from "@/components/features/rewards/RewardTypeControls"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +34,8 @@ interface GridProps {
 
 export function TemplateGrid({ selectedEventId }: GridProps) {
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
+  const [rewardTypeFilter, setRewardTypeFilter] =
+    useState<RewardTypeFilterValue>("all")
   const [previewId, setPreviewId] = useState<string | null>(null)
 
   const [templateToDelete, setTemplateToDelete] = useState<{
@@ -40,7 +47,8 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
 
   const { data: templates, isLoading } = useTemplatesQuery(
     selectedEventId,
-    activeTab
+    activeTab,
+    rewardTypeFilter === "all" ? undefined : rewardTypeFilter
   )
   const { duplicateMutation, deleteMutation } = useTemplateMutations()
 
@@ -79,8 +87,13 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-slate-50/30">
       {/* Header & Tabs */}
       <div className="border-b bg-white px-8 py-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-xl font-semibold text-slate-800">Templates</h2>
+
+          <RewardTypeFilter
+            value={rewardTypeFilter}
+            onChange={setRewardTypeFilter}
+          />
 
           <div className="inline-flex rounded-lg bg-slate-100 p-1">
             <button
@@ -175,6 +188,9 @@ export function TemplateGrid({ selectedEventId }: GridProps) {
                   >
                     {template.name}
                   </h4>
+                  <div className="mt-2">
+                    <RewardTypeBadge type={template.reward_type} />
+                  </div>
                   <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                     <span className="font-medium text-slate-400">Subj:</span>
                     <span

@@ -10,6 +10,7 @@ import {
 import { useBuilderStore } from "@/store/useBuilderStore"
 import { type PageBlock, type BlockType } from "@/types/builder"
 import { AVAILABLE_BLOCKS } from "@/config/blocks.config"
+import type { CampaignRewardType } from "@/hooks/useCampaignOptions"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,7 +23,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-export function BuilderNavigator() {
+export function BuilderNavigator({
+  rewardType,
+}: {
+  rewardType: CampaignRewardType | ""
+}) {
   const {
     blocks,
     selectedBlockId,
@@ -61,6 +66,10 @@ export function BuilderNavigator() {
     }
   }
 
+  const availableBlocks = AVAILABLE_BLOCKS.filter(
+    (config) => rewardType === "link" || config.type !== "RewardSelector"
+  )
+
   return (
     <div className="flex w-72 flex-col border-r bg-white">
       <div className="border-b p-4">
@@ -72,7 +81,7 @@ export function BuilderNavigator() {
             Add Section
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {AVAILABLE_BLOCKS.map((config) => {
+            {availableBlocks.map((config) => {
               const Icon = config.icon || LayoutTemplate
               return (
                 <button
@@ -86,6 +95,12 @@ export function BuilderNavigator() {
               )
             })}
           </div>
+          {rewardType !== "link" && (
+            <p className="mt-3 rounded-md bg-blue-50 p-2 text-xs leading-relaxed text-blue-700">
+              Gift Selector is available only for Link pages. Points and Code
+              pages display content but cannot be used to purchase products.
+            </p>
+          )}
         </div>
       </div>
 

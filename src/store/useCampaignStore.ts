@@ -18,10 +18,12 @@ export interface CampaignDraftData {
   starts_at?: string
   expires_at?: string
   send_initial_reminder?: boolean
-  reminder_initial_date?: string
+  reminder_initial_date?: string // Legacy single-date draft compatibility
+  reminder_initial_dates?: string[]
   reminder_initial_template_id?: number
   send_expiry_reminder?: boolean
-  reminder_expiry_date?: string
+  reminder_expiry_date?: string // Legacy single-date draft compatibility
+  reminder_expiry_dates?: string[]
   reminder_expiry_template_id?: number
   bulk_total_cost?: number
   event_address?: string

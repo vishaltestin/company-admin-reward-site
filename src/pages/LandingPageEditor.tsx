@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
   ArrowLeft,
@@ -18,6 +18,8 @@ import {
 import { useBuilderShortcuts } from "@/hooks/useBuilderShortcuts"
 import { useBuilderStore } from "@/store/useBuilderStore"
 import { type PageBlock, type ThemeTokens } from "@/types/builder"
+import type { CampaignRewardType } from "@/hooks/useCampaignOptions"
+import { toast } from "sonner"
 
 import { BuilderNavigator } from "@/components/features/landing-pages/builder/BuilderNavigator"
 import { BuilderCanvas } from "@/components/features/landing-pages/builder/BuilderCanvas"
@@ -49,6 +51,9 @@ function LandingPageEditorCore({
 }) {
   const navigate = useNavigate()
   const { updateMutation } = useLandingPageMutations()
+  const [rewardType, setRewardType] = useState<CampaignRewardType | "">(
+    template.reward_type ?? ""
+  )
 
   const {
     status,
@@ -61,6 +66,7 @@ function LandingPageEditorCore({
     redo,
     setStatus,
     setPreviewMode,
+    setBlocks,
     initializeBuilder,
   } = useBuilderStore()
   useBuilderShortcuts()
@@ -74,27 +80,67 @@ function LandingPageEditorCore({
           fontFamily: "Inter, sans-serif",
         }
 
-      initializeBuilder(
-        (template.page_schema || []) as PageBlock[],
-        template.status,
-        safeTheme
-      )
+      const initialBlocks = (template.page_schema || []) as PageBlock[]
+      const compatibleBlocks =
+        template.reward_type === "link"
+          ? initialBlocks
+          : initialBlocks.filter((block) => block.type !== "RewardSelector")
+
+      // Older points/code templates may already contain a product selector.
+      // Hide it immediately in the editor; saving persists the cleaned schema.
+      initializeBuilder(compatibleBlocks, template.status, safeTheme)
     }
   }, [template, initializeBuilder])
+
+  const handleRewardTypeChange = (nextType: CampaignRewardType | "") => {
+    setRewardType(nextType)
+
+    if (nextType !== "link") {
+      const compatibleBlocks = blocks.filter(
+        (block) => block.type !== "RewardSelector"
+      )
+
+      if (compatibleBlocks.length !== blocks.length) {
+        // setBlocks retains undo history, but the save guard below prevents a
+        // selector from being restored into a points/code page accidentally.
+        setBlocks(compatibleBlocks)
+        toast.info(
+          "Gift Selector sections were removed because they are available only for Link pages."
+        )
+      }
+    }
+  }
 
   const handleSave = () => {
     const numericId = parseInt(id, 10)
     if (isNaN(numericId)) return
 
+    const pageSchema =
+      rewardType === "link"
+        ? blocks
+        : blocks.filter((block) => block.type !== "RewardSelector")
+
+    if (pageSchema.length !== blocks.length) {
+      setBlocks(pageSchema)
+    }
+
     updateMutation.mutate({
       id: numericId,
       data: {
-        page_schema: blocks,
+        page_schema: pageSchema,
         status: status,
+        reward_type: rewardType || null,
         global_theme_tokens: globalTheme,
       },
     })
   }
+
+  const hasLinkOnlyBlocks =
+    rewardType !== "link" &&
+    ((template.page_schema || []).some(
+      (block) => block.type === "RewardSelector"
+    ) ||
+      blocks.some((block) => block.type === "RewardSelector"))
 
   const statusColors = {
     draft: "bg-yellow-50 text-yellow-700 border-yellow-200",
@@ -130,6 +176,25 @@ function LandingPageEditorCore({
               <option value="draft">Draft</option>
               <option value="published">Published</option>
               <option value="archived">Archived</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 border-l pl-6">
+            <span className="text-xs font-medium text-gray-500">Reward:</span>
+            <select
+              value={rewardType}
+              onChange={(e) =>
+                handleRewardTypeChange(
+                  e.target.value as CampaignRewardType | ""
+                )
+              }
+              className="h-8 cursor-pointer rounded-md border border-gray-300 bg-white px-2 text-xs font-semibold text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              title="Exact campaign type for which this landing page can be selected"
+            >
+              <option value="">Unassigned (library only)</option>
+              <option value="points">Points</option>
+              <option value="code">Code</option>
+              <option value="link">Link</option>
             </select>
           </div>
         </div>
@@ -205,8 +270,15 @@ function LandingPageEditorCore({
         </div>
       </header>
 
+      {hasLinkOnlyBlocks && (
+        <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
+          Gift Selector sections are available only for Link pages. They will be
+          removed when you save this template with the selected reward type.
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
-        <BuilderNavigator />
+        <BuilderNavigator rewardType={rewardType} />
         <BuilderCanvas />
         <BuilderInspector
           availableVariables={template?.available_variables || []}

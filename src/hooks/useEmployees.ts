@@ -9,6 +9,9 @@ interface PaginatedResponse<T> {
   data: T[]
   last_page: number
   total: number
+  from: number | null
+  to: number | null
+  per_page: number
 }
 
 import { type User } from "@/store/useAuthStore"
@@ -17,21 +20,24 @@ interface UseEmployeesParams {
   vertical: string
   page: number
   search: string
+  activeOnly?: boolean
 }
 
 export const useEmployeesQuery = ({
   vertical,
   page,
   search,
+  activeOnly = false,
 }: UseEmployeesParams) => {
   return useQuery({
-    queryKey: ["employees", vertical, page, search],
+    queryKey: ["employees", vertical, page, search, activeOnly],
     queryFn: async () => {
       const { data } = await api.get<PaginatedResponse<User>>("/employees", {
         params: {
           vertical,
           page,
           search: search || undefined,
+          active_only: activeOnly ? 1 : undefined,
         },
       })
       return data

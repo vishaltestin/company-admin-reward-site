@@ -51,13 +51,30 @@ const DataRow = ({
   </div>
 )
 
+const formatReminderDates = (dates: string[]) =>
+  dates
+    .map((date) => new Date(`${date}T00:00:00`).toLocaleDateString())
+    .join(", ")
+
 export function Step13Summary({ onEditStep }: Step13SummaryProps) {
   const { data, prevStep, resetCampaign } = useCampaignStore()
   const navigate = useNavigate()
   const createCampaign = useCreateCampaignMutation()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const initialReminderDates =
+    data.reminder_initial_dates ??
+    (data.reminder_initial_date ? [data.reminder_initial_date] : [])
+  const expiryReminderDates =
+    data.reminder_expiry_dates ??
+    (data.reminder_expiry_date ? [data.reminder_expiry_date] : [])
+  const missingLinkLandingPage =
+    data.distribution_type === "online" &&
+    data.reward_type === "link" &&
+    !data.landing_page_template_id
+
   const handleSubmit = async () => {
+    if (missingLinkLandingPage) return
     setIsSubmitting(true)
 
     const payload = {
@@ -81,10 +98,14 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
           sms_content: data.sms_content,
           sms_cta: data.sms_cta,
           send_initial_reminder: data.send_initial_reminder ?? false,
-          reminder_initial_date: data.reminder_initial_date,
+          reminder_initial_dates: data.send_initial_reminder
+            ? initialReminderDates
+            : undefined,
           reminder_initial_template_id: data.reminder_initial_template_id,
           send_expiry_reminder: data.send_expiry_reminder ?? false,
-          reminder_expiry_date: data.reminder_expiry_date,
+          reminder_expiry_dates: data.send_expiry_reminder
+            ? expiryReminderDates
+            : undefined,
           reminder_expiry_template_id: data.reminder_expiry_template_id,
         },
       }),
@@ -190,7 +211,9 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
                   value={
                     data.landing_page_template_id
                       ? `ID: ${data.landing_page_template_id}`
-                      : "Not set (optional — skipped)"
+                      : data.reward_type === "link"
+                        ? "Required — not selected"
+                        : "Built-in congratulations page (skipped)"
                   }
                 />
                 <DataRow
@@ -225,12 +248,11 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
                   }
                 />
                 <DataRow
-                  label="Follow-up Reminder"
+                  label="Follow-up Reminders"
                   value={
-                    data.send_initial_reminder && data.reminder_initial_date
-                      ? new Date(
-                          `${data.reminder_initial_date}T00:00:00`
-                        ).toLocaleDateString()
+                    data.send_initial_reminder &&
+                    initialReminderDates.length > 0
+                      ? formatReminderDates(initialReminderDates)
                       : "Off"
                   }
                 />
@@ -245,12 +267,10 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
                   }
                 />
                 <DataRow
-                  label="Expiry Reminder"
+                  label="Expiry Reminders"
                   value={
-                    data.send_expiry_reminder && data.reminder_expiry_date
-                      ? new Date(
-                          `${data.reminder_expiry_date}T00:00:00`
-                        ).toLocaleDateString()
+                    data.send_expiry_reminder && expiryReminderDates.length > 0
+                      ? formatReminderDates(expiryReminderDates)
                       : "Off"
                   }
                 />
@@ -321,6 +341,13 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
         </div>
       </div>
 
+      {missingLinkLandingPage && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          A Reward Link campaign cannot launch without a landing page containing
+          a reward picker. Return to the Landing Page step and select one.
+        </div>
+      )}
+
       <div className="flex justify-between border-t pt-4">
         <Button
           type="button"
@@ -333,7 +360,7 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
         <Button
           type="button"
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || missingLinkLandingPage}
           className="min-w-50 bg-green-600 hover:bg-green-700"
         >
           {isSubmitting ? (

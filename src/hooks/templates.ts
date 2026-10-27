@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api, getApiErrorMessage } from "@/lib/axios"
 import { toast } from "sonner"
+import type { CampaignRewardType } from "@/hooks/useCampaignOptions"
 
 // ==========================================
 // 1. TYPES & INTERFACES
@@ -36,6 +37,7 @@ export interface EmailTemplate {
   id: number
   name: string
   subject: string
+  reward_type: CampaignRewardType | null
   thumbnail_path: string | null
   updated_at: string
 }
@@ -60,17 +62,18 @@ export const useSidebarEventsQuery = () => {
 // Fetch the grid of templates based on selected event and tab
 export const useTemplatesQuery = (
   eventId: number | null,
-  tab: "global" | "variations"
+  tab: "global" | "variations",
+  rewardType?: CampaignRewardType
 ) => {
   return useQuery({
-    // Include eventId and tab in the key so it refetches when they change
-    queryKey: ["email-templates", "list", eventId, tab],
+    // Include eventId, tab, and reward type so each exact filter is cached separately.
+    queryKey: ["email-templates", "list", eventId, tab, rewardType],
     queryFn: async () => {
       if (!eventId) return [] // Don't fetch if no event is selected
       const { data } = await api.get<{ data: EmailTemplate[] }>(
         "/email-templates",
         {
-          params: { event_id: eventId, tab },
+          params: { event_id: eventId, tab, reward_type: rewardType },
         }
       )
       return data.data
@@ -139,6 +142,7 @@ export const useTemplateMutations = () => {
         design_json?: Record<string, unknown>
         name?: string
         subject?: string
+        reward_type?: CampaignRewardType | null
         thumbnail_path?: string
       }
     }) => {

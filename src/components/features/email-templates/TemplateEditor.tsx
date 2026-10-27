@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner"
 import { api } from "@/lib/axios"
 import dynamicVariablesPlugin from "@/lib/grapesjs-dynamic-vars"
+import type { CampaignRewardType } from "@/hooks/useCampaignOptions"
 
 export default function TemplateEditor() {
   const { id } = useParams<{ id: string }>()
@@ -35,6 +36,9 @@ export default function TemplateEditor() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [editName, setEditName] = useState("")
   const [editSubject, setEditSubject] = useState("")
+  const [editRewardType, setEditRewardType] = useState<CampaignRewardType | "">(
+    ""
+  )
   const [editThumbnail, setEditThumbnail] = useState("")
   const [isUploadingThumb, setIsUploadingThumb] = useState(false)
 
@@ -133,6 +137,7 @@ export default function TemplateEditor() {
     if (template) {
       setEditName(template.name)
       setEditSubject(template.subject)
+      setEditRewardType(template.reward_type ?? "")
       setEditThumbnail(template.thumbnail_path || "")
     }
     setIsSettingsOpen(true)
@@ -209,6 +214,7 @@ export default function TemplateEditor() {
           ...editorContent,
           name: editName,
           subject: editSubject,
+          reward_type: editRewardType || null,
           thumbnail_path: editThumbnail,
         },
       },
@@ -331,6 +337,33 @@ export default function TemplateEditor() {
                 className="w-full rounded-md border p-2 text-sm"
                 placeholder="Check out these deals!"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="email-reward-type"
+                className="text-sm font-medium"
+              >
+                Reward Type
+              </label>
+              <select
+                id="email-reward-type"
+                value={editRewardType}
+                onChange={(e) =>
+                  setEditRewardType(e.target.value as CampaignRewardType | "")
+                }
+                className="w-full rounded-md border bg-white p-2 text-sm"
+              >
+                <option value="">Unassigned — library only</option>
+                <option value="points">Points</option>
+                <option value="code">Code</option>
+                <option value="link">Link</option>
+              </select>
+              <p className="text-xs leading-relaxed text-gray-500">
+                Campaign template pickers use an exact match. An unassigned
+                legacy template stays editable here but cannot be selected for a
+                campaign.
+              </p>
             </div>
 
             <div className="space-y-2">

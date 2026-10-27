@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api, getApiErrorMessage } from "@/lib/axios"
 import { toast } from "sonner"
 import type { PageBlock } from "@/types/builder"
+import type { CampaignRewardType } from "@/hooks/useCampaignOptions"
 
 export interface LandingPageTemplate {
   id: number
   name: string
   title: string
+  reward_type: CampaignRewardType | null
   thumbnail_path: string | null
   status: "draft" | "published" | "archived"
   updated_at: string
@@ -52,15 +54,16 @@ export const useLandingPageSidebarQuery = () => {
 
 export const useLandingPagesQuery = (
   eventId: number | null,
-  tab: "global" | "variations"
+  tab: "global" | "variations",
+  rewardType?: CampaignRewardType
 ) => {
   return useQuery({
-    queryKey: ["landing-pages", "list", eventId, tab],
+    queryKey: ["landing-pages", "list", eventId, tab, rewardType],
     queryFn: async () => {
       if (!eventId) return []
       const { data } = await api.get<{ data: LandingPageTemplate[] }>(
         "/landing-pages",
-        { params: { event_id: eventId, tab } }
+        { params: { event_id: eventId, tab, reward_type: rewardType } }
       )
       return data.data
     },
@@ -126,6 +129,7 @@ export const useLandingPageMutations = () => {
       data: {
         name?: string
         title?: string
+        reward_type?: CampaignRewardType | null
         thumbnail_path?: string
         status?: "draft" | "published" | "archived"
         global_theme_tokens?: Record<string, unknown>

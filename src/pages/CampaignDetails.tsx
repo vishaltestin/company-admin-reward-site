@@ -124,6 +124,15 @@ const formatDate = (value?: string | null) =>
       })
     : "—"
 
+const formatReminderDates = (dates: string[]) =>
+  dates
+    .map((date) =>
+      new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
+        dateStyle: "medium",
+      })
+    )
+    .join(", ")
+
 const inr = (value: number | string | null | undefined) =>
   `₹${Number(value ?? 0).toLocaleString("en-IN")}`
 
@@ -227,6 +236,24 @@ export default function CampaignDetails() {
   const isOnline = data.distribution_type === "online"
   const isBulk = data.distribution_type === "bulk"
   const config = (data.config_json || {}) as Record<string, any>
+  const initialReminderDates: string[] = Array.isArray(
+    config.reminder_initial_dates
+  )
+    ? config.reminder_initial_dates.filter(
+        (date: unknown): date is string => typeof date === "string"
+      )
+    : typeof config.reminder_initial_date === "string"
+      ? [config.reminder_initial_date]
+      : []
+  const expiryReminderDates: string[] = Array.isArray(
+    config.reminder_expiry_dates
+  )
+    ? config.reminder_expiry_dates.filter(
+        (date: unknown): date is string => typeof date === "string"
+      )
+    : typeof config.reminder_expiry_date === "string"
+      ? [config.reminder_expiry_date]
+      : []
 
   const canCancel = ["processing", "inquiry_pending", "active"].includes(
     data.status
@@ -458,10 +485,10 @@ export default function CampaignDetails() {
                 </div>
                 <div className="space-y-1">
                   <DetailRow
-                    label="Follow-up Reminder"
+                    label="Follow-up Reminders"
                     value={
-                      config.reminder_initial_date ? (
-                        formatDate(config.reminder_initial_date)
+                      initialReminderDates.length > 0 ? (
+                        formatReminderDates(initialReminderDates)
                       ) : (
                         <span className="text-gray-400">Not scheduled</span>
                       )
@@ -469,10 +496,10 @@ export default function CampaignDetails() {
                     icon={Clock}
                   />
                   <DetailRow
-                    label="Expiry Reminder"
+                    label="Expiry Reminders"
                     value={
-                      config.reminder_expiry_date ? (
-                        formatDate(config.reminder_expiry_date)
+                      expiryReminderDates.length > 0 ? (
+                        formatReminderDates(expiryReminderDates)
                       ) : (
                         <span className="text-gray-400">Not scheduled</span>
                       )

@@ -24,9 +24,8 @@ export function Step8OnlineLanding() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
 
-  // Reward-link claim pages MUST contain a reward picker section; the API
-  // filters the offered templates accordingly (reward_type param). Other
-  // reward types keep the unfiltered list.
+  // The API applies an exact reward_type filter. Link pages must also contain
+  // a visible reward picker; points/code pages are congratulations experiences.
   const rewardType = storeData.reward_type
 
   // The API filter param only understands online reward types — narrow the
@@ -52,6 +51,7 @@ export function Step8OnlineLanding() {
   const {
     handleSubmit,
     setValue,
+    setError,
     control,
     formState: { errors },
   } = useForm<Step8OnlineData>({
@@ -67,6 +67,14 @@ export function Step8OnlineLanding() {
   })
 
   const onSubmit = (formData: Step8OnlineData) => {
+    if (rewardType === "link" && !formData.landing_page_template_id) {
+      setError("landing_page_template_id", {
+        type: "required",
+        message: "Select a landing page with a reward picker to continue.",
+      })
+      return
+    }
+
     updateData(formData)
     nextStep()
   }
@@ -89,11 +97,22 @@ export function Step8OnlineLanding() {
           </h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
             {rewardType === "link"
-              ? `No claim-capable landing-page templates are available${storeData.event_id ? " for this event" : " in this vertical"}. You can skip this step — employees will get the standard reward claim page.`
+              ? `No claim-capable landing-page templates are available${storeData.event_id ? " for this event" : " in this vertical"}. Create or activate a Link design with a Gift Selector to continue.`
               : activeTab === "global"
                 ? `No standard templates are available${storeData.event_id ? " for this event" : " in this vertical"} yet.`
                 : `You haven't created any saved landing-page templates${storeData.event_id ? " for this event" : " in this vertical"}. Try selecting a standard theme instead.`}
           </p>
+          {rewardType === "link" && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5"
+              onClick={() => window.open("/landing-page-templates", "_blank")}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Manage landing pages
+            </Button>
+          )}
         </div>
       )
     }
@@ -199,8 +218,8 @@ export function Step8OnlineLanding() {
             Landing Page Experience
           </h2>
           <p className="text-muted-foreground">
-            Select the webpage design recipients will see when they claim their
-            reward.
+            Select the editable webpage recipients will see when they open their
+            reward link.
           </p>
         </div>
 
@@ -209,9 +228,22 @@ export function Step8OnlineLanding() {
             <Gift className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
             <p className="text-sm text-blue-800">
               <span className="font-semibold">Reward-link campaign:</span> only
-              designs containing a reward picker are shown below — a claim page
-              is useless without one. If nothing fits, skip this step and
-              employees will see the standard reward claim page.
+              designs containing a reward picker are shown below. Selecting one
+              is required so recipients always have a working product-claim
+              experience.
+            </p>
+          </div>
+        )}
+
+        {(rewardType === "points" || rewardType === "code") && (
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <Gift className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+            <p className="text-sm text-emerald-800">
+              <span className="font-semibold">
+                {rewardType === "points" ? "Points" : "Code"} campaign:
+              </span>{" "}
+              choose a congratulations landing page. Recipients receive a real
+              page URL in their email; no product picker is required.
             </p>
           </div>
         )}
@@ -280,19 +312,20 @@ export function Step8OnlineLanding() {
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <div className="flex items-center gap-2">
-          {/* Landing page is OPTIONAL: skipping clears any earlier pick so the
-              campaign simply runs without a web experience — reward emails
-              link straight to the storefront claim page instead. */}
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              updateData({ landing_page_template_id: undefined })
-              nextStep()
-            }}
-          >
-            Skip for now
-          </Button>
+          {/* Points/code can use the built-in congratulations page. Link
+              campaigns must explicitly choose a working reward-picker page. */}
+          {rewardType !== "link" && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                updateData({ landing_page_template_id: undefined })
+                nextStep()
+              }}
+            >
+              Skip for now
+            </Button>
+          )}
           <Button type="submit" disabled={!selectedTemplateId}>
             Continue <ChevronRight className="ml-2 h-4 w-4" />
           </Button>

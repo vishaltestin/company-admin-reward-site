@@ -52,7 +52,9 @@ export function Step4OnlineRecipients() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchInput)
-      if (searchInput) setPage(1)
+      // Always reset, including when search is cleared; otherwise the user
+      // can remain on a page that does not exist in the new result set.
+      setPage(1)
     }, 300)
     return () => clearTimeout(timer)
   }, [searchInput])
@@ -60,11 +62,13 @@ export function Step4OnlineRecipients() {
   const {
     data: employeesData,
     isLoading,
+    isFetching,
     refetch,
   } = useEmployeesQuery({
     vertical: currentVertical?.slug || "",
     page,
     search: debouncedSearch,
+    activeOnly: true,
   })
 
   const {
@@ -223,6 +227,37 @@ export function Step4OnlineRecipients() {
             </TableBody>
           </Table>
         </div>
+
+        {employeesData && employeesData.total > 0 && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-500">
+              Showing {employeesData.from ?? 0}–{employeesData.to ?? 0} of{" "}
+              {employeesData.total} recipients · Page{" "}
+              {employeesData.current_page} of {employeesData.last_page}.
+              Selections are kept across pages.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page <= 1 || isFetching}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((current) => current + 1)}
+                disabled={page >= employeesData.last_page || isFetching}
+              >
+                Next <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         {errors.recipient_ids && (
           <p className="text-center text-sm font-medium text-destructive">

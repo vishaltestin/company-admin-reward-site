@@ -32,6 +32,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  RewardTypeBadge,
+  RewardTypeFilter,
+  type RewardTypeFilterValue,
+} from "@/components/features/rewards/RewardTypeControls"
 
 interface GridProps {
   selectedEventId: number | null
@@ -39,6 +44,8 @@ interface GridProps {
 
 export function LandingPageGrid({ selectedEventId }: GridProps) {
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
+  const [rewardTypeFilter, setRewardTypeFilter] =
+    useState<RewardTypeFilterValue>("all")
   const navigate = useNavigate()
 
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
@@ -53,7 +60,8 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
 
   const { data: templates, isLoading } = useLandingPagesQuery(
     selectedEventId,
-    activeTab
+    activeTab,
+    rewardTypeFilter === "all" ? undefined : rewardTypeFilter
   )
   const { duplicateMutation, deleteMutation } = useLandingPageMutations()
 
@@ -118,10 +126,15 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-slate-50/30">
       {/* Header & Tabs */}
       <div className="border-b bg-white px-8 py-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-xl font-semibold text-slate-800">
             Landing Pages
           </h2>
+
+          <RewardTypeFilter
+            value={rewardTypeFilter}
+            onChange={setRewardTypeFilter}
+          />
 
           <div className="flex rounded-lg bg-slate-100 p-1">
             <button
@@ -212,6 +225,9 @@ export function LandingPageGrid({ selectedEventId }: GridProps) {
                         </span>{" "}
                         {template.title}
                       </p>
+                      <div className="mt-2">
+                        <RewardTypeBadge type={template.reward_type} />
+                      </div>
                     </div>
                     <span
                       className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
