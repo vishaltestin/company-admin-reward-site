@@ -57,7 +57,6 @@ export function EmployeeTable({
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
 
-  // Alert Dialog State
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
 
@@ -68,6 +67,7 @@ export function EmployeeTable({
       setDebouncedSearch(searchInput)
       if (searchInput) setPage(1)
     }, 300)
+
     return () => clearTimeout(timer)
   }, [searchInput])
 
@@ -79,6 +79,7 @@ export function EmployeeTable({
 
   const closeDeleteDialog = (isOpen: boolean) => {
     setIsDeleteDialogOpen(isOpen)
+
     if (!isOpen) {
       setTimeout(() => setUserToDelete(null), 300)
     }
@@ -89,9 +90,7 @@ export function EmployeeTable({
 
     if (userToDelete) {
       deleteMutation.mutate(userToDelete.id, {
-        onSuccess: () => {
-          closeDeleteDialog(false)
-        },
+        onSuccess: () => closeDeleteDialog(false),
       })
     }
   }
@@ -132,10 +131,11 @@ export function EmployeeTable({
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
                   <TableCell>
                     <Skeleton className="h-4 w-32" />
                   </TableCell>
@@ -166,7 +166,14 @@ export function EmployeeTable({
               data?.data.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    {user.first_name} {user.last_name}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>
+                        {user.first_name} {user.last_name}
+                      </span>
+                      {user.user_type === "sub_admin" && (
+                        <Badge variant="outline">Sub-Admin</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.mobile || "-"}</TableCell>
@@ -182,29 +189,31 @@ export function EmployeeTable({
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="min-w-50"
-                      >
+                      <DropdownMenuContent align="end" className="min-w-50">
                         <DropdownMenuItem onClick={() => onEdit(user)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Profile
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onPromote(user)}>
-                          <ShieldCheck className="mr-2 h-4 w-4 text-blue-500" />
-                          Promote to Admin
-                        </DropdownMenuItem>
 
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setUserToDelete(user)
-                            setIsDeleteDialogOpen(true)
-                          }}
-                          className="text-red-600 focus:bg-red-50 focus:text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Recipient
-                        </DropdownMenuItem>
+                        {user.user_type !== "sub_admin" && (
+                          <DropdownMenuItem onClick={() => onPromote(user)}>
+                            <ShieldCheck className="mr-2 h-4 w-4 text-blue-500" />
+                            Promote to Admin
+                          </DropdownMenuItem>
+                        )}
+
+                        {user.user_type !== "sub_admin" && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setUserToDelete(user)
+                              setIsDeleteDialogOpen(true)
+                            }}
+                            className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Recipient
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -224,7 +233,7 @@ export function EmployeeTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page === 1 || isLoading}
             >
               <ChevronLeft className="mr-1 h-4 w-4" /> Previous
@@ -232,7 +241,7 @@ export function EmployeeTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => setPage((current) => current + 1)}
               disabled={page === data.last_page || isLoading}
             >
               Next <ChevronRight className="ml-1 h-4 w-4" />

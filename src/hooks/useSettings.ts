@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query"
-import { api } from "@/lib/axios"
-import { toast } from "sonner"
-import { useAuthStore, type User } from "@/store/useAuthStore"
 import { AxiosError } from "axios"
+import { toast } from "sonner"
+
+import { api } from "@/lib/axios"
+import { useAuthStore, type User } from "@/store/useAuthStore"
 
 const handleApiError = (error: unknown, fallbackMessage: string) => {
   if (error instanceof AxiosError && error.response?.data?.message) {
@@ -51,11 +52,13 @@ export const useCompanyMutations = () => {
   const { user, setUser } = useAuthStore()
 
   const updateBusinessDetails = useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
-      const response = await api.put<{
+    mutationFn: async (formData: FormData) => {
+      const response = await api.post<{
         message: string
         company: User["company"]
-      }>("/company/business-details", data)
+      }>("/company/business-details", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
       return response.data
     },
     onSuccess: (response) => {

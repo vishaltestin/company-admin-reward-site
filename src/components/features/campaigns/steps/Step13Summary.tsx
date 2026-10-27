@@ -80,8 +80,12 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
           email_template_id: data.email_template_id,
           sms_content: data.sms_content,
           sms_cta: data.sms_cta,
+          send_initial_reminder: data.send_initial_reminder ?? false,
           reminder_initial_date: data.reminder_initial_date,
+          reminder_initial_template_id: data.reminder_initial_template_id,
+          send_expiry_reminder: data.send_expiry_reminder ?? false,
           reminder_expiry_date: data.reminder_expiry_date,
+          reminder_expiry_template_id: data.reminder_expiry_template_id,
         },
       }),
 
@@ -218,6 +222,46 @@ export function Step13Summary({ onEditStep }: Step13SummaryProps) {
                     data.expires_at
                       ? new Date(data.expires_at).toLocaleString()
                       : "Never"
+                  }
+                />
+                <DataRow
+                  label="Follow-up Reminder"
+                  value={
+                    data.send_initial_reminder && data.reminder_initial_date
+                      ? new Date(
+                          `${data.reminder_initial_date}T00:00:00`
+                        ).toLocaleDateString()
+                      : "Off"
+                  }
+                />
+                <DataRow
+                  label="Follow-up Email"
+                  value={
+                    data.send_initial_reminder
+                      ? data.reminder_initial_template_id
+                        ? `Template #${data.reminder_initial_template_id}`
+                        : "Campaign email template"
+                      : "—"
+                  }
+                />
+                <DataRow
+                  label="Expiry Reminder"
+                  value={
+                    data.send_expiry_reminder && data.reminder_expiry_date
+                      ? new Date(
+                          `${data.reminder_expiry_date}T00:00:00`
+                        ).toLocaleDateString()
+                      : "Off"
+                  }
+                />
+                <DataRow
+                  label="Expiry Email"
+                  value={
+                    data.send_expiry_reminder
+                      ? data.reminder_expiry_template_id
+                        ? `Template #${data.reminder_expiry_template_id}`
+                        : "Campaign email template"
+                      : "—"
                   }
                 />
               </div>

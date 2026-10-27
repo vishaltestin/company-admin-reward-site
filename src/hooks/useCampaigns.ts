@@ -3,11 +3,58 @@ import { api } from "@/lib/axios"
 import { toast } from "sonner"
 import { AxiosError } from "axios"
 
-export const useCampaignsQuery = (page = 1) => {
-  return useQuery({
-    queryKey: ["campaigns", page],
+export interface CampaignListFilters {
+  eventId?: number
+  customEventName?: string
+  verticalId?: number
+  month?: number
+  year?: number
+}
+
+export interface CampaignListEventOption {
+  value: string
+  label: string
+}
+
+export interface CampaignListResponse {
+  data: CampaignListItem[]
+  next_page_url: string | null
+  filters?: {
+    events: CampaignListEventOption[]
+    years: number[]
+  }
+}
+
+export interface CampaignListItem {
+  id: string | number
+  name: string
+  created_at: string | Date
+  distribution_type: string
+  vertical?: { name: string }
+  event?: { id: number; title: string } | null
+  event_id?: number | null
+  custom_event_name?: string | null
+  total_budget: number
+  status: string
+}
+
+export const useCampaignsQuery = (
+  page = 1,
+  filters: CampaignListFilters = {}
+) => {
+  return useQuery<CampaignListResponse>({
+    queryKey: ["campaigns", page, filters],
     queryFn: async () => {
-      const { data } = await api.get(`/campaigns?page=${page}`)
+      const { data } = await api.get<CampaignListResponse>("/campaigns", {
+        params: {
+          page,
+          event_id: filters.eventId,
+          custom_event_name: filters.customEventName,
+          vertical_id: filters.verticalId,
+          month: filters.month,
+          year: filters.year,
+        },
+      })
       return data
     },
   })

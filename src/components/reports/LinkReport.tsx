@@ -42,7 +42,7 @@ import {
   useReportOverview,
   useReportTrends,
   useReportDistribution,
-  useReportTopRecipients,   
+  useReportTopRecipients,
 } from "@/hooks/useReports"
 import type { TopRecipient, ReportFilters } from "@/types/reports"
 
@@ -90,8 +90,9 @@ export default function LinksReport({ dateRange, program }: LinksReportProps) {
   const { data: trends, isLoading: loadingTrends } = useReportTrends(filters)
   const { data: distribution, isLoading: loadingDist } =
     useReportDistribution(filters)
-  const { data: topRecipients = [], isLoading: loadingRecipients } =
+  const { data: topRecipientsReport, isLoading: loadingRecipients } =
     useReportTopRecipients(filters)
+  const topRecipients = topRecipientsReport?.recipients ?? []
 
   const isGlobalLoading = loadingOverview || loadingTrends || loadingDist
 
@@ -131,6 +132,9 @@ export default function LinksReport({ dateRange, program }: LinksReportProps) {
             <div className="text-2xl font-bold">
               {overview?.total_redeemed?.toLocaleString() ?? 0}
             </div>
+            <p className="text-xs text-muted-foreground">
+              from links issued in the selected period
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -151,6 +155,7 @@ export default function LinksReport({ dateRange, program }: LinksReportProps) {
             <div className="text-2xl font-bold">
               {overview?.total_campaigns ?? 0}
             </div>
+            <p className="text-xs text-muted-foreground">currently active</p>
           </CardContent>
         </Card>
       </div>
@@ -160,7 +165,9 @@ export default function LinksReport({ dateRange, program }: LinksReportProps) {
         <Card>
           <CardHeader>
             <CardTitle>Links Sent vs. Claimed</CardTitle>
-            <CardDescription>Monthly comparison</CardDescription>
+            <CardDescription>
+              By issue month; claimed links are counted in their issue cohort
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   ChevronLeft,
   ChevronRight,
@@ -27,23 +27,6 @@ import { EventModal } from "./EventModal"
 
 type CalendarView = "monthly" | "weekly" | "daily"
 
-const EVENT_TYPE_OPTIONS = [
-  { value: "all", label: "All Events" },
-  { value: "birthday", label: "Birthday" },
-  { value: "anniversary", label: "Anniversary" },
-  { value: "joining", label: "Joining Date" },
-  { value: "onboarding", label: "Onboarding" },
-  { value: "milestone", label: "Milestone" },
-  { value: "retirement", label: "Retirement" },
-  { value: "purchase", label: "Purchase" },
-  { value: "registry", label: "Registry Due" },
-  { value: "possession", label: "Possession Due" },
-  { value: "site-visit", label: "Site Visit" },
-  { value: "test-drive", label: "Test Drive" },
-  { value: "service", label: "Service Due" },
-  { value: "insurance", label: "Insurance Due" },
-]
-
 export function FullCalendarWidget() {
   const user = useAuthStore((state) => state.user)
 
@@ -60,18 +43,32 @@ export function FullCalendarWidget() {
     if (!user || !dbVerticals) return []
     if (["business_head", "super_admin"].includes(user.user_type))
       return dbVerticals
-    return dbVerticals.filter((v) => user.managed_vertical_ids.includes(v.id))
+    return dbVerticals.filter((vertical) =>
+      user.managed_vertical_ids.includes(vertical.id)
+    )
   }, [user, dbVerticals])
 
-  const { data: apiEvents = [], isLoading } = useCalendarEventsQuery({
+  const { data: calendarData, isLoading } = useCalendarEventsQuery({
     year: currentDate.getFullYear(),
     month: currentDate.getMonth() + 1,
     vertical_slug: verticalFilter !== "all" ? verticalFilter : undefined,
   })
 
+  const apiEvents = calendarData?.events ?? []
+  const eventFilterOptions = calendarData?.filterEvents ?? []
+
+  useEffect(() => {
+    if (
+      eventFilter !== "all" &&
+      !eventFilterOptions.some((event) => String(event.id) === eventFilter)
+    ) {
+      setEventFilter("all")
+    }
+  }, [eventFilter, eventFilterOptions])
+
   const events = useMemo(() => {
     if (eventFilter === "all") return apiEvents
-    return apiEvents.filter((e) => e.type === eventFilter)
+    return apiEvents.filter((event) => event.event_id === Number(eventFilter))
   }, [apiEvents, eventFilter])
 
   const calendarDays = useMemo(() => {
@@ -85,29 +82,41 @@ export function FullCalendarWidget() {
       for (let i = 1; i <= lastDay.getDate(); i++) {
         days.push(new Date(year, month, i))
       }
-      while (days.length < 42) days.push(null) // Keep 6 rows
+      while (days.length < 42) days.push(null)
       return days
     }
 
     if (currentView === "weekly") {
       const start = startOfWeek(currentDate)
-      return Array.from({ length: 7 }).map((_, i) => addDays(start, i))
+      return Array.from({ length: 7 }).map((_, index) => addDays(start, index))
     }
 
     return [currentDate]
   }, [currentDate, currentView])
 
   const handlePrev = () => {
+    if (currentView === "monthly") {
+      setCurrentDate(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+      )
+      return
+    }
+
     const newDate = new Date(currentDate)
-    if (currentView === "monthly") newDate.setMonth(newDate.getMonth() - 1)
     if (currentView === "weekly") newDate.setDate(newDate.getDate() - 7)
     if (currentView === "daily") newDate.setDate(newDate.getDate() - 1)
     setCurrentDate(newDate)
   }
 
   const handleNext = () => {
+    if (currentView === "monthly") {
+      setCurrentDate(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+      )
+      return
+    }
+
     const newDate = new Date(currentDate)
-    if (currentView === "monthly") newDate.setMonth(newDate.getMonth() + 1)
     if (currentView === "weekly") newDate.setDate(newDate.getDate() + 7)
     if (currentView === "daily") newDate.setDate(newDate.getDate() + 1)
     setCurrentDate(newDate)
@@ -153,7 +162,7 @@ export function FullCalendarWidget() {
           <div className="flex flex-wrap items-center gap-3">
             <Tabs
               value={currentView}
-              onValueChange={(v) => setCurrentView(v as CalendarView)}
+              onValueChange={(value) => setCurrentView(value as CalendarView)}
             >
               <TabsList className="h-9">
                 <TabsTrigger value="monthly">Month</TabsTrigger>
@@ -162,14 +171,60 @@ export function FullCalendarWidget() {
               </TabsList>
             </Tabs>
 
+            <Select
+              value={String(currentDate.getMonth())}
+              onValueChange={(value) =>
+                setCurrentDate(
+                  new Date(currentDate.getFullYear(), Number(value), 1)
+                )
+              }
+            >
+              <SelectTrigger aria-label="Select month" className="h-9 w-32">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 12 }, (_, month) => (
+                  <SelectItem key={month} value={String(month)}>
+                    {format(new Date(2000, month, 1), "MMMM")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={String(currentDate.getFullYear())}
+              onValueChange={(value) =>
+                setCurrentDate(
+                  new Date(Number(value), currentDate.getMonth(), 1)
+                )
+              }
+            >
+              <SelectTrigger aria-label="Select year" className="h-9 w-28">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from(
+                  { length: 41 },
+                  (_, index) => currentDate.getFullYear() - 20 + index
+                ).map((year) => (
+                  <SelectItem key={year} value={String(year)}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={eventFilter} onValueChange={setEventFilter}>
-              <SelectTrigger className="h-9 w-37.5">
+              <SelectTrigger aria-label="Filter by event" className="h-9 w-44">
                 <SelectValue placeholder="All Events" />
               </SelectTrigger>
               <SelectContent>
-                {EVENT_TYPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
+                <SelectItem value="all">All Events</SelectItem>
+                {eventFilterOptions.map((event) => (
+                  <SelectItem key={event.id} value={String(event.id)}>
+                    {verticalFilter === "all" && availableVerticals.length > 1
+                      ? `${event.title} — ${event.vertical_name}`
+                      : event.title}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -181,9 +236,9 @@ export function FullCalendarWidget() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Networks</SelectItem>
-                {availableVerticals.map((v) => (
-                  <SelectItem key={v.slug} value={v.slug}>
-                    {v.name}
+                {availableVerticals.map((vertical) => (
+                  <SelectItem key={vertical.slug} value={vertical.slug}>
+                    {vertical.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -244,7 +299,9 @@ export function FullCalendarWidget() {
                   <div className="grid grid-cols-7 grid-rows-6">
                     {calendarDays.map((day, index) => {
                       const dayEvents = day
-                        ? events.filter((e) => isSameDay(parseISO(e.date), day))
+                        ? events.filter((event) =>
+                            isSameDay(parseISO(event.date), day)
+                          )
                         : []
                       const isToday = day && isSameDay(day, new Date())
 
@@ -299,6 +356,7 @@ export function FullCalendarWidget() {
                     {calendarDays.map((day, index) => {
                       if (!day) return null
                       const isToday = isSameDay(day, new Date())
+
                       return (
                         <div
                           key={index}
@@ -327,8 +385,8 @@ export function FullCalendarWidget() {
                   <div className="grid min-h-100 grid-cols-7">
                     {calendarDays.map((day, index) => {
                       if (!day) return null
-                      const dayEvents = events.filter((e) =>
-                        isSameDay(parseISO(e.date), day)
+                      const dayEvents = events.filter((event) =>
+                        isSameDay(parseISO(event.date), day)
                       )
                       const isToday = isSameDay(day, new Date())
 
@@ -374,9 +432,10 @@ export function FullCalendarWidget() {
                   </h3>
 
                   {(() => {
-                    const dayEvents = events.filter((e) =>
-                      isSameDay(parseISO(e.date), currentDate)
+                    const dayEvents = events.filter((event) =>
+                      isSameDay(parseISO(event.date), currentDate)
                     )
+
                     if (dayEvents.length === 0) {
                       return (
                         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 py-12 text-center text-muted-foreground">
@@ -408,7 +467,8 @@ export function FullCalendarWidget() {
                             <span className="mt-1 text-xs opacity-80">
                               Vertical:{" "}
                               {availableVerticals.find(
-                                (v) => v.slug === event.vertical_slug
+                                (vertical) =>
+                                  vertical.slug === event.vertical_slug
                               )?.name || event.vertical_slug}
                             </span>
                           </div>

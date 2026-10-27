@@ -17,20 +17,34 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCampaignStore } from "@/store/useCampaignStore"
 import { step9OnlineSchema, type Step9OnlineData } from "../schemas"
-import { useCampaignEmailTemplates } from "@/hooks/useCampaignOptions"
+import {
+  type CampaignRewardType,
+  useCampaignEmailTemplates,
+} from "@/hooks/useCampaignOptions"
 import { TemplatePreviewModal } from "@/components/features/email-templates/TemplatePreviewModal"
 
 export function Step9OnlineEmail() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
   const [activeTab, setActiveTab] = useState<"global" | "variations">("global")
   const [previewId, setPreviewId] = useState<string | null>(null)
+  const rewardType: CampaignRewardType | null =
+    storeData.reward_type === "points" ||
+    storeData.reward_type === "code" ||
+    storeData.reward_type === "link"
+      ? storeData.reward_type
+      : null
 
   const {
     data: templates,
     isLoading,
     refetch,
     isRefetching,
-  } = useCampaignEmailTemplates(storeData.event_id ?? null, activeTab)
+  } = useCampaignEmailTemplates(
+    storeData.event_id ?? null,
+    storeData.vertical_id ?? null,
+    activeTab,
+    rewardType
+  )
 
   const {
     handleSubmit,
@@ -69,8 +83,8 @@ export function Step9OnlineEmail() {
           </h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
             {activeTab === "global"
-              ? "No standard email templates are available for this event yet."
-              : "You haven't created any custom email templates for this event."}
+              ? `No standard email templates are available${storeData.event_id ? " for this event" : " in this vertical"} yet.`
+              : `You haven't created any saved email templates${storeData.event_id ? " for this event" : " in this vertical"}.`}
           </p>
         </div>
       )
@@ -151,7 +165,8 @@ export function Step9OnlineEmail() {
                   {template.name}
                 </h4>
                 <p className="mt-1 line-clamp-1 text-xs text-gray-500">
-                  Subject: {template.title || "No subject set"}
+                  Subject:{" "}
+                  {template.subject || template.title || "No subject set"}
                 </p>
               </div>
             </div>
@@ -183,8 +198,9 @@ export function Step9OnlineEmail() {
                 Custom Event Detected
               </h3>
               <p className="mt-1 text-sm text-yellow-700">
-                Because you entered a custom event, standard theme matching is
-                disabled. We have loaded the general company templates below.
+                Because this campaign uses a custom event, there is no exact
+                event match. The lists below show compatible email templates
+                from the selected vertical, filtered by reward type.
               </p>
             </div>
           ) : null}

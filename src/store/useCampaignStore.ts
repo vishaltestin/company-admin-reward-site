@@ -17,8 +17,12 @@ export interface CampaignDraftData {
   sms_cta?: string
   starts_at?: string
   expires_at?: string
+  send_initial_reminder?: boolean
   reminder_initial_date?: string
+  reminder_initial_template_id?: number
+  send_expiry_reminder?: boolean
   reminder_expiry_date?: string
+  reminder_expiry_template_id?: number
   bulk_total_cost?: number
   event_address?: string
   event_date?: string

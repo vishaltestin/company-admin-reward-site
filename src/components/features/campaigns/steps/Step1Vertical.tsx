@@ -36,6 +36,10 @@ export function Step1Vertical() {
         event_id: null,
         custom_event_name: undefined,
         recipient_ids: [],
+        landing_page_template_id: undefined,
+        email_template_id: undefined,
+        reminder_initial_template_id: undefined,
+        reminder_expiry_template_id: undefined,
       }),
     })
     nextStep()

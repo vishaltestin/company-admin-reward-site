@@ -6,6 +6,8 @@ export interface User {
   last_name: string
   email: string
   mobile: string | null
+  designation?: string | null
+  department?: string | null
   gender: string | null
   dob: string | null
 
@@ -23,7 +25,7 @@ export interface User {
   shipping_pincode: string | null
   shipping_country: string | null
 
-  user_type: "business_head" | "sub_admin"
+  user_type: "business_head" | "sub_admin" | "rewardee"
   managed_vertical_ids: number[]
   managed_verticals?: { id: number; name: string; slug: string }[]
   is_active: boolean
@@ -38,6 +40,8 @@ export interface User {
     number_of_employee: string | null
     gst_no: string | null
     pan_no: string | null
+    gst_document_url?: string | null
+    pan_document_url?: string | null
     address: string | null
     points_name: string
     wallet_balance: number

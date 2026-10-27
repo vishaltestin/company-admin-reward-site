@@ -43,19 +43,15 @@ export default function RecipientReports({
     to: toDate,
   }
 
-  const { data: topRecipients = [], isLoading: loadingRecipients } =
+  const { data: recipientsReport, isLoading: loadingRecipients } =
     useReportTopRecipients(filters)
+  const topRecipients = recipientsReport?.recipients ?? []
+  const summary = recipientsReport?.summary
 
-  // Derive Summary Metrics mathematically from the Table Data
-  const totalUsers = topRecipients.length
-  const totalHeldPoints = topRecipients.reduce(
-    (sum, user) => sum + Number(user.points_balance),
-    0
-  )
-  const totalOrders = topRecipients.reduce(
-    (sum, user) => sum + Number(user.redemptions),
-    0
-  )
+  // Summary values come from all matching recipients, not just the 15 leaderboard rows.
+  const totalUsers = summary?.total_recipients ?? 0
+  const totalHeldPoints = summary?.total_points_balance ?? 0
+  const totalOrders = summary?.total_orders ?? 0
   const avgPoints =
     totalUsers > 0 ? Math.round(totalHeldPoints / totalUsers) : 0
 
@@ -80,7 +76,7 @@ export default function RecipientReports({
               {totalUsers.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              in current timeframe
+              with activity in the selected period
             </p>
           </CardContent>
         </Card>
@@ -93,7 +89,7 @@ export default function RecipientReports({
               {totalHeldPoints.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              across all displayed users
+              current balances of matching recipients
             </p>
           </CardContent>
         </Card>
@@ -171,7 +167,7 @@ export default function RecipientReports({
                     <TableCell className="font-medium">
                       {recipient.points_balance.toLocaleString()}
                     </TableCell>
-                    <TableCell>{recipient.redemptions}</TableCell>
+                    <TableCell>{recipient.orders.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge
                         variant={

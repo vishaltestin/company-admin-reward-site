@@ -72,9 +72,17 @@ export function Step5OnlineReward() {
   const onSubmit = (formData: Step5OnlineData) => {
     if (!hasSufficientFunds) return
 
+    const rewardTypeChanged = storeData.reward_type !== formData.reward_type
+
     updateData({
       reward_type: formData.reward_type,
       reward_value_per_user: formData.reward_value_per_user,
+      ...(rewardTypeChanged && {
+        landing_page_template_id: undefined,
+        email_template_id: undefined,
+        reminder_initial_template_id: undefined,
+        reminder_expiry_template_id: undefined,
+      }),
     })
     nextStep()
   }

@@ -1,6 +1,6 @@
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ChevronRight, ChevronLeft, CalendarClock } from "lucide-react"
+import { ChevronRight, ChevronLeft, CalendarClock, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,25 +8,76 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useCampaignStore } from "@/store/useCampaignStore"
 import { step11OnlineSchema, type Step11OnlineData } from "../schemas"
+import {
+  type CampaignRewardType,
+  useCampaignEmailTemplates,
+} from "@/hooks/useCampaignOptions"
 
-/**
- * Current moment as a datetime-local string (YYYY-MM-DDTHH:mm) in the
- * user's timezone — the value format the picker compares against.
- */
+/** Current moment as a datetime-local string in the user's timezone. */
 const nowLocal = () => {
-  const d = new Date()
-  d.setSeconds(0, 0)
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+  const date = new Date()
+  date.setSeconds(0, 0)
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16)
 }
 
-/** datetime-local value → comparable number (0 for empty strings). */
-const toEpoch = (value: string | undefined | null) =>
-  value ? new Date(value).getTime() : 0
+/** Current local calendar date as YYYY-MM-DD. */
+const todayLocal = () => {
+  const date = new Date()
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-")
+}
+
+/** Move an ISO calendar date by whole days without UTC/timezone drift. */
+const shiftDate = (value: string, days: number) => {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number)
+  const date = new Date(year, month - 1, day + days)
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-")
+}
 
 export function Step11OnlineSchedule() {
   const { data: storeData, updateData, nextStep, prevStep } = useCampaignStore()
+
+  const rewardType: CampaignRewardType | null =
+    storeData.reward_type === "points" ||
+    storeData.reward_type === "code" ||
+    storeData.reward_type === "link"
+      ? storeData.reward_type
+      : null
+
+  const { data: standardTemplates, isLoading: isLoadingStandardTemplates } =
+    useCampaignEmailTemplates(
+      storeData.event_id ?? null,
+      storeData.vertical_id ?? null,
+      "global",
+      rewardType
+    )
+  const { data: savedTemplates, isLoading: isLoadingSavedTemplates } =
+    useCampaignEmailTemplates(
+      storeData.event_id ?? null,
+      storeData.vertical_id ?? null,
+      "variations",
+      rewardType
+    )
+
+  const reminderTemplates = [
+    ...(standardTemplates ?? []).map((template) => ({
+      ...template,
+      sourceLabel: "Standard",
+    })),
+    ...(savedTemplates ?? []).map((template) => ({
+      ...template,
+      sourceLabel: "Saved",
+    })),
+  ]
 
   const {
     register,
@@ -39,49 +90,114 @@ export function Step11OnlineSchedule() {
     defaultValues: {
       starts_at: storeData.starts_at || "",
       expires_at: storeData.expires_at || "",
-      send_initial_reminder: !!storeData.reminder_initial_date,
+      send_initial_reminder:
+        storeData.send_initial_reminder ?? !!storeData.reminder_initial_date,
       reminder_initial_date: storeData.reminder_initial_date || "",
-      send_expiry_reminder: !!storeData.reminder_expiry_date,
+      reminder_initial_template_id: storeData.reminder_initial_template_id,
+      send_expiry_reminder:
+        storeData.send_expiry_reminder ?? !!storeData.reminder_expiry_date,
       reminder_expiry_date: storeData.reminder_expiry_date || "",
+      reminder_expiry_template_id: storeData.reminder_expiry_template_id,
     },
   })
 
-  // const sendInitialReminder = watch("send_initial_reminder")
-  // const sendExpiryReminder = watch("send_expiry_reminder")
-  const [sendInitialReminder, sendExpiryReminder, startsAt, expiresAt] =
-    useWatch({
-      control,
-      name: [
-        "send_initial_reminder",
-        "send_expiry_reminder",
-        "starts_at",
-        "expires_at",
-      ],
-    })
+  const sendInitialReminder = useWatch({
+    control,
+    name: "send_initial_reminder",
+  })
+  const sendExpiryReminder = useWatch({ control, name: "send_expiry_reminder" })
+  const startsAt = useWatch({ control, name: "starts_at" })
+  const expiresAt = useWatch({ control, name: "expires_at" })
+  const initialTemplateId = useWatch({
+    control,
+    name: "reminder_initial_template_id",
+  })
+  const expiryTemplateId = useWatch({
+    control,
+    name: "reminder_expiry_template_id",
+  })
 
-  // ── Date bounds (native pickers can't select outside these) ──────────
-  // Launch:  now or later.  Expiry: after launch.  Follow-up reminder:
-  // between launch and expiry.  Urgent reminder: now → expiry.
+  const today = todayLocal()
+  const tomorrow = shiftDate(today, 1)
   const minLaunch = nowLocal()
-  const minExpiry = toEpoch(startsAt) ? startsAt! : minLaunch
-  const minInitialReminder = toEpoch(startsAt) ? startsAt! : minLaunch
-  const maxInitialReminder = toEpoch(expiresAt) ? expiresAt! : undefined
-  const minExpiryReminder = minLaunch
-  const maxExpiryReminder = toEpoch(expiresAt) ? expiresAt! : undefined
+  const minExpiry = startsAt || minLaunch
+  const launchDate = startsAt ? startsAt.slice(0, 10) : today
+  const minInitialReminder = shiftDate(
+    launchDate < today ? today : launchDate,
+    1
+  )
+  const minExpiryReminder = tomorrow
+  const maxReminderDate = expiresAt
+    ? shiftDate(expiresAt.slice(0, 10), -1)
+    : undefined
 
   const onSubmit = (formData: Step11OnlineData) => {
     updateData({
       starts_at: formData.starts_at,
-      expires_at: formData.expires_at,
+      expires_at: formData.expires_at || undefined,
+      send_initial_reminder: formData.send_initial_reminder,
       reminder_initial_date: formData.send_initial_reminder
         ? formData.reminder_initial_date
         : undefined,
+      reminder_initial_template_id: formData.send_initial_reminder
+        ? formData.reminder_initial_template_id
+        : undefined,
+      send_expiry_reminder: formData.send_expiry_reminder,
       reminder_expiry_date: formData.send_expiry_reminder
         ? formData.reminder_expiry_date
+        : undefined,
+      reminder_expiry_template_id: formData.send_expiry_reminder
+        ? formData.reminder_expiry_template_id
         : undefined,
     })
     nextStep()
   }
+
+  const updateTemplateSelection = (
+    field: "reminder_initial_template_id" | "reminder_expiry_template_id",
+    value: string
+  ) => {
+    setValue(field, value === "campaign" ? undefined : Number(value), {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }
+
+  const renderTemplateSelect = (
+    field: "reminder_initial_template_id" | "reminder_expiry_template_id",
+    selectedId: number | undefined,
+    label: string
+  ) => (
+    <div className="space-y-2">
+      <Label htmlFor={field}>{label}</Label>
+      <select
+        id={field}
+        value={selectedId ? String(selectedId) : "campaign"}
+        onChange={(event) =>
+          updateTemplateSelection(field, event.currentTarget.value)
+        }
+        className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-ring focus:outline-none"
+      >
+        <option value="campaign">Use the campaign email template</option>
+        {reminderTemplates.map((template) => (
+          <option key={template.id} value={String(template.id)}>
+            {template.name} ({template.sourceLabel})
+          </option>
+        ))}
+      </select>
+      {isLoadingStandardTemplates || isLoadingSavedTemplates ? (
+        <p className="flex items-center gap-1 text-xs text-gray-500">
+          <Loader2 className="h-3 w-3 animate-spin" /> Loading compatible email
+          templates…
+        </p>
+      ) : (
+        <p className="text-xs text-gray-500">
+          Only templates compatible with this reward type and vertical are
+          listed. The campaign email template is used by default.
+        </p>
+      )}
+    </div>
+  )
 
   return (
     <form
@@ -94,7 +210,8 @@ export function Step11OnlineSchedule() {
             Schedule & Timeline
           </h2>
           <p className="text-muted-foreground">
-            When should this campaign launch and end?
+            Choose the launch and expiration times. Reminder emails are sent at
+            9:00 a.m. on their selected calendar date.
           </p>
         </div>
 
@@ -118,7 +235,7 @@ export function Step11OnlineSchedule() {
               </p>
             ) : (
               <p className="text-xs text-gray-500">
-                Can't be in the past — pick a launch from now onwards.
+                Choose a launch from now onwards.
               </p>
             )}
           </div>
@@ -139,27 +256,40 @@ export function Step11OnlineSchedule() {
               </p>
             ) : (
               <p className="text-xs text-gray-500">
-                Leave blank if rewards never expire. Must be after the launch
-                date.
+                Leave blank if rewards never expire. Must be after launch.
               </p>
             )}
           </div>
         </div>
 
         <div className="space-y-6">
-          <h3 className="flex items-center gap-2 text-lg font-semibold">
-            <CalendarClock className="h-5 w-5" /> Automated Reminders
-          </h3>
+          <div>
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <CalendarClock className="h-5 w-5" /> Automated Reminders
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Both reminders use the selected campaign email by default. You can
+              choose a separate compatible template for either reminder.
+            </p>
+          </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-4 rounded-xl border bg-gray-50 p-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="send_initial_reminder"
-                  checked={sendInitialReminder}
-                  onCheckedChange={(val) =>
-                    setValue("send_initial_reminder", !!val)
-                  }
+                  checked={!!sendInitialReminder}
+                  onCheckedChange={(value) => {
+                    const enabled = !!value
+                    setValue("send_initial_reminder", enabled, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    if (!enabled) {
+                      setValue("reminder_initial_date", "")
+                      setValue("reminder_initial_template_id", undefined)
+                    }
+                  }}
                 />
                 <Label htmlFor="send_initial_reminder" className="font-medium">
                   Send follow-up reminder after launch
@@ -167,25 +297,34 @@ export function Step11OnlineSchedule() {
               </div>
 
               {sendInitialReminder && (
-                <div className="animate-in space-y-2 pl-6 fade-in">
-                  <Label htmlFor="reminder_initial_date">Reminder Date</Label>
-                  <Input
-                    id="reminder_initial_date"
-                    type="datetime-local"
-                    className="bg-white"
-                    min={minInitialReminder}
-                    max={maxInitialReminder}
-                    {...register("reminder_initial_date")}
-                  />
-                  {errors.reminder_initial_date ? (
-                    <p className="text-sm font-medium text-destructive">
-                      {errors.reminder_initial_date.message}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-500">
-                      Must be after launch
-                      {maxInitialReminder ? " and before expiration" : ""}.
-                    </p>
+                <div className="animate-in space-y-4 pl-6 fade-in">
+                  <div className="space-y-2">
+                    <Label htmlFor="reminder_initial_date">
+                      Follow-up Reminder Date
+                    </Label>
+                    <Input
+                      id="reminder_initial_date"
+                      type="date"
+                      className="bg-white"
+                      min={minInitialReminder}
+                      max={maxReminderDate}
+                      {...register("reminder_initial_date")}
+                    />
+                    {errors.reminder_initial_date ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {errors.reminder_initial_date.message}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500">
+                        Select a future calendar date after launch and before
+                        expiration.
+                      </p>
+                    )}
+                  </div>
+                  {renderTemplateSelect(
+                    "reminder_initial_template_id",
+                    initialTemplateId,
+                    "Follow-up Email Template"
                   )}
                 </div>
               )}
@@ -195,36 +334,61 @@ export function Step11OnlineSchedule() {
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="send_expiry_reminder"
-                  checked={sendExpiryReminder}
-                  onCheckedChange={(val) =>
-                    setValue("send_expiry_reminder", !!val)
-                  }
+                  checked={!!sendExpiryReminder}
+                  onCheckedChange={(value) => {
+                    const enabled = !!value
+                    setValue("send_expiry_reminder", enabled, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    if (!enabled) {
+                      setValue("reminder_expiry_date", "")
+                      setValue("reminder_expiry_template_id", undefined)
+                    }
+                  }}
                 />
-                <Label htmlFor="send_expiry_reminder" className="font-medium">
-                  Send "Urgent" reminder before expiration
+                <Label
+                  htmlFor="send_expiry_reminder"
+                  className={`font-medium ${!expiresAt ? "text-gray-400" : ""}`}
+                >
+                  Send urgent reminder before expiration
                 </Label>
               </div>
 
+              {!expiresAt && (
+                <p className="pl-6 text-xs text-gray-500">
+                  Set an expiration date to enable this reminder.
+                </p>
+              )}
+
               {sendExpiryReminder && (
-                <div className="animate-in space-y-2 pl-6 fade-in">
-                  <Label htmlFor="reminder_expiry_date">Reminder Date</Label>
-                  <Input
-                    id="reminder_expiry_date"
-                    type="datetime-local"
-                    className="bg-white"
-                    min={minExpiryReminder}
-                    max={maxExpiryReminder}
-                    {...register("reminder_expiry_date")}
-                  />
-                  {errors.reminder_expiry_date ? (
-                    <p className="text-sm font-medium text-destructive">
-                      {errors.reminder_expiry_date.message}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-500">
-                      Must be in the future
-                      {maxExpiryReminder ? " and before expiration" : ""}.
-                    </p>
+                <div className="animate-in space-y-4 pl-6 fade-in">
+                  <div className="space-y-2">
+                    <Label htmlFor="reminder_expiry_date">
+                      Expiry Reminder Date
+                    </Label>
+                    <Input
+                      id="reminder_expiry_date"
+                      type="date"
+                      className="bg-white"
+                      min={minExpiryReminder}
+                      max={maxReminderDate}
+                      {...register("reminder_expiry_date")}
+                    />
+                    {errors.reminder_expiry_date ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {errors.reminder_expiry_date.message}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500">
+                        Select a future calendar date before expiration.
+                      </p>
+                    )}
+                  </div>
+                  {renderTemplateSelect(
+                    "reminder_expiry_template_id",
+                    expiryTemplateId,
+                    "Expiry Email Template"
                   )}
                 </div>
               )}

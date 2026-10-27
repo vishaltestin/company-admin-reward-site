@@ -19,9 +19,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  CalendarDays,
 } from "lucide-react"
 
-import { useCampaignsQuery } from "@/hooks/useCampaigns"
+import {
+  type CampaignListFilters,
+  type CampaignListItem,
+  useCampaignsQuery,
+} from "@/hooks/useCampaigns"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,17 +47,22 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-interface Campaign {
-  id: string | number
-  name: string
-  created_at: string | Date
-  distribution_type: string
-  vertical?: {
-    name: string
-  }
-  total_budget: number
-  status: string
-}
+type Campaign = CampaignListItem
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+]
 
 // Reusable Status Badge Component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -98,14 +108,47 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 export default function CampaignsList() {
   const [page, setPage] = useState(1)
+  const [eventFilter, setEventFilter] = useState("all")
+  const [monthFilter, setMonthFilter] = useState("all")
+  const [yearFilter, setYearFilter] = useState("all")
   const navigate = useNavigate()
+
+  const campaignFilters = useMemo<CampaignListFilters>(() => {
+    const filters: CampaignListFilters = {}
+
+    if (eventFilter.startsWith("event:")) {
+      const eventId = Number(eventFilter.slice("event:".length))
+      if (Number.isInteger(eventId) && eventId > 0) {
+        filters.eventId = eventId
+      }
+    } else if (eventFilter.startsWith("custom:")) {
+      const [, verticalIdValue, ...encodedNameParts] = eventFilter.split(":")
+      const verticalId = Number(verticalIdValue)
+      const encodedName = encodedNameParts.join(":")
+
+      if (Number.isInteger(verticalId) && verticalId > 0) {
+        filters.verticalId = verticalId
+      }
+
+      try {
+        filters.customEventName = decodeURIComponent(encodedName)
+      } catch {
+        filters.customEventName = encodedName
+      }
+    }
+
+    if (monthFilter !== "all") filters.month = Number(monthFilter)
+    if (yearFilter !== "all") filters.year = Number(yearFilter)
+
+    return filters
+  }, [eventFilter, monthFilter, yearFilter])
 
   // Table State
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState({})
 
-  const { data, isLoading } = useCampaignsQuery(page)
+  const { data, isLoading } = useCampaignsQuery(page, campaignFilters)
   const tableData = data?.data || []
 
   // Define Table Columns
@@ -181,6 +224,19 @@ export default function CampaignsList() {
             {row.getValue("distribution_type") === "online"
               ? "Online Gift"
               : "Wholesale Inquiry"}
+          </span>
+        ),
+      },
+      {
+        id: "event",
+        header: () => (
+          <span className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+            Event
+          </span>
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm text-gray-600">
+            {row.original.event?.title || row.original.custom_event_name || "—"}
           </span>
         ),
       },
@@ -293,6 +349,7 @@ export default function CampaignsList() {
       "Campaign Name",
       "Date Created",
       "Type",
+      "Event",
       "Audience",
       "Budget",
       "Status",
@@ -306,10 +363,11 @@ export default function CampaignsList() {
         campaign.distribution_type === "online"
           ? "Online Gift"
           : "Wholesale Inquiry",
+        `"${(campaign.event?.title || campaign.custom_event_name || "—").replace(/"/g, '""')}"`,
         `"${campaign.vertical?.name || "—"}"`,
         campaign.total_budget || 0,
         campaign.status,
-      ].join(",") 
+      ].join(",")
     })
 
     const csvContent = [headers.join(","), ...csvRows].join("\n")
@@ -352,9 +410,9 @@ export default function CampaignsList() {
 
       <div className="space-y-4">
         {/* Table Toolbar */}
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex flex-1 items-center space-x-3">
-            <div className="relative w-full max-w-sm">
+        <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-start">
+          <div className="flex flex-1 flex-wrap items-center gap-3">
+            <div className="relative w-full max-w-sm min-w-56 flex-1">
               <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search campaigns..."
@@ -378,7 +436,7 @@ export default function CampaignsList() {
                   ?.setFilterValue(val === "all" ? "" : val)
               }
             >
-              <SelectTrigger className="w-[160px] bg-white focus:ring-black">
+              <SelectTrigger className="w-[150px] bg-white focus:ring-black">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -386,8 +444,93 @@ export default function CampaignsList() {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="inquiry_pending">Inquiry Pending</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select
+              value={eventFilter}
+              onValueChange={(value) => {
+                setPage(1)
+                setEventFilter(value)
+              }}
+            >
+              <SelectTrigger className="w-[190px] bg-white focus:ring-black">
+                <SelectValue placeholder="Event" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Events</SelectItem>
+                {(data?.filters?.events ?? []).map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={monthFilter}
+              onValueChange={(value) => {
+                setPage(1)
+                setMonthFilter(value)
+              }}
+            >
+              <SelectTrigger className="w-[150px] bg-white focus:ring-black">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Months</SelectItem>
+                {MONTHS.map((month, index) => (
+                  <SelectItem key={month} value={String(index + 1)}>
+                    {month}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={yearFilter}
+              onValueChange={(value) => {
+                setPage(1)
+                setYearFilter(value)
+              }}
+            >
+              <SelectTrigger className="w-[130px] bg-white focus:ring-black">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Years</SelectItem>
+                {(data?.filters?.years ?? []).map((year) => (
+                  <SelectItem key={year} value={String(year)}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <CalendarDays className="h-3.5 w-3.5" /> Created date
+            </span>
+
+            {(eventFilter !== "all" ||
+              monthFilter !== "all" ||
+              yearFilter !== "all") && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setPage(1)
+                  setEventFilter("all")
+                  setMonthFilter("all")
+                  setYearFilter("all")
+                }}
+                className="text-gray-500"
+              >
+                Clear filters
+              </Button>
+            )}
           </div>
 
           <Button
@@ -442,6 +585,9 @@ export default function CampaignsList() {
                       </TableCell>
                       <TableCell>
                         <div className="h-4 w-24 rounded bg-gray-100" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="h-4 w-28 rounded bg-gray-100" />
                       </TableCell>
                       <TableCell>
                         <div className="h-4 w-28 rounded bg-gray-100" />

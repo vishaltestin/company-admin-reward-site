@@ -106,8 +106,9 @@ export default function PointsReports({
   const { data: trends, isLoading: loadingTrends } = useReportTrends(filters)
   const { data: distribution, isLoading: loadingDist } =
     useReportDistribution(filters)
-  const { data: topRecipients = [], isLoading: loadingRecipients } =
+  const { data: topRecipientsReport, isLoading: loadingRecipients } =
     useReportTopRecipients(filters)
+  const topRecipients = topRecipientsReport?.recipients ?? []
   const { data: campaigns = [], isLoading: loadingCampaigns } =
     useReportCampaigns(filters)
   const { data: recentActivity = [], isLoading: loadingActivity } =
@@ -157,6 +158,9 @@ export default function PointsReports({
             <div className="text-2xl font-bold">
               {overview?.total_redeemed?.toLocaleString() ?? 0}
             </div>
+            <p className="text-xs text-muted-foreground">
+              from successful orders in the selected period
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -167,8 +171,14 @@ export default function PointsReports({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {overview?.redemption_rate ?? 0}%
+              {overview?.redemption_rate == null
+                ? "N/A"
+                : `${overview.redemption_rate}%`}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Tracked grants issued in this period used by successful orders in
+              this period; unavailable for legacy or incomplete grant history
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -181,6 +191,7 @@ export default function PointsReports({
             <div className="text-2xl font-bold">
               {overview?.total_campaigns ?? 0}
             </div>
+            <p className="text-xs text-muted-foreground">currently active</p>
           </CardContent>
         </Card>
       </div>
@@ -191,7 +202,11 @@ export default function PointsReports({
         <Card>
           <CardHeader>
             <CardTitle>Points Sent vs. Redeemed</CardTitle>
-            <CardDescription>Monthly comparison</CardDescription>
+            <CardDescription>
+              Sent by grant month; redemptions are traced to campaign grants in
+              successful orders. Redemptions from legacy or untracked grants are
+              unavailable.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -334,7 +349,9 @@ export default function PointsReports({
         <CardHeader>
           <CardTitle>Campaign Level Report</CardTitle>
           <CardDescription>
-            Performance metrics for individual campaigns
+            Redeemed points are allocated to grants from each campaign and count
+            only successful orders in the selected period. Legacy or untracked
+            grant history is shown as unavailable.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -352,6 +369,7 @@ export default function PointsReports({
                   <TableHead>End Date</TableHead>
                   <TableHead>Points Sent</TableHead>
                   <TableHead>Points Redeemed</TableHead>
+                  <TableHead>Redemption Rate</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -363,7 +381,16 @@ export default function PointsReports({
                     <TableCell>{campaign.startDate}</TableCell>
                     <TableCell>{campaign.endDate}</TableCell>
                     <TableCell>{campaign.sent.toLocaleString()}</TableCell>
-                    <TableCell>{campaign.redeemed.toLocaleString()}</TableCell>
+                    <TableCell>
+                      {campaign.redeemed == null
+                        ? "Unavailable"
+                        : campaign.redeemed.toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      {campaign.redemption_rate == null
+                        ? "Unavailable"
+                        : `${campaign.redemption_rate}%`}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={

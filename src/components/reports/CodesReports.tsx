@@ -93,8 +93,9 @@ export default function CodesReports({
   const { data: trends, isLoading: loadingTrends } = useReportTrends(filters)
   const { data: distribution, isLoading: loadingDist } =
     useReportDistribution(filters)
-  const { data: topRecipients = [], isLoading: loadingRecipients } =
+  const { data: topRecipientsReport, isLoading: loadingRecipients } =
     useReportTopRecipients(filters)
+  const topRecipients = topRecipientsReport?.recipients ?? []
   const { data: campaigns = [], isLoading: loadingCampaigns } =
     useReportCampaigns(filters)
   const { data: recentActivity = [], isLoading: loadingActivity } =
@@ -135,6 +136,9 @@ export default function CodesReports({
             <div className="text-2xl font-bold">
               {overview?.total_redeemed?.toLocaleString() ?? 0}
             </div>
+            <p className="text-xs text-muted-foreground">
+              from codes issued in the selected period
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -155,6 +159,7 @@ export default function CodesReports({
             <div className="text-2xl font-bold">
               {overview?.total_campaigns ?? 0}
             </div>
+            <p className="text-xs text-muted-foreground">currently active</p>
           </CardContent>
         </Card>
       </div>
@@ -163,7 +168,9 @@ export default function CodesReports({
         <Card>
           <CardHeader>
             <CardTitle>Codes Sent vs. Redeemed</CardTitle>
-            <CardDescription>Monthly comparison</CardDescription>
+            <CardDescription>
+              By issue month; redeemed counts claimed codes from each cohort
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -316,7 +323,9 @@ export default function CodesReports({
                     <TableCell>{campaign.startDate}</TableCell>
                     <TableCell>{campaign.endDate}</TableCell>
                     <TableCell>{campaign.sent.toLocaleString()}</TableCell>
-                    <TableCell>{campaign.redeemed.toLocaleString()}</TableCell>
+                    <TableCell>
+                      {campaign.redeemed?.toLocaleString() ?? "—"}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={

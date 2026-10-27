@@ -6,6 +6,8 @@ import type {
   ReportTrendItem,
   ReportDistributionItem,
   TopRecipient,
+  TopRecipientsReport,
+  TopRecipientsSummary,
   CampaignReportItem,
   RecentActivityItem,
   ApiResponseEnvelope,
@@ -58,13 +60,27 @@ export const useReportDistribution = (filters: ReportFilters) => {
 }
 
 export const useReportTopRecipients = (filters: ReportFilters) => {
-  return useQuery<TopRecipient[]>({
+  return useQuery<TopRecipientsReport>({
     queryKey: ["reports", "top-recipients", filters],
     queryFn: async () => {
-      const { data } = await api.get<ApiResponseEnvelope<TopRecipient[]>>(
-        `/reports/top-recipients?${formatFilters(filters)}`
-      )
-      return data.data
+      const { data } = await api.get<
+        ApiResponseEnvelope<TopRecipient[]> & { summary?: TopRecipientsSummary }
+      >(`/reports/top-recipients?${formatFilters(filters)}`)
+
+      return {
+        recipients: data.data,
+        summary: data.summary ?? {
+          total_recipients: data.data.length,
+          total_points_balance: data.data.reduce(
+            (sum, recipient) => sum + Number(recipient.points_balance || 0),
+            0
+          ),
+          total_orders: data.data.reduce(
+            (sum, recipient) => sum + Number(recipient.orders || 0),
+            0
+          ),
+        },
+      }
     },
   })
 }

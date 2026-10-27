@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -44,6 +44,7 @@ export function Step8OnlineLanding() {
     isRefetching,
   } = useCampaignLandingPages(
     storeData.event_id ?? null,
+    storeData.vertical_id ?? null,
     activeTab,
     claimFilter
   )
@@ -64,22 +65,6 @@ export function Step8OnlineLanding() {
     control,
     name: "landing_page_template_id",
   })
-
-  // If the reward-type filter removes the previously selected template
-  // (e.g. HR picked a design earlier, then switched the campaign to
-  // reward-link), clear the stale selection instead of submitting an id the
-  // backend will reject.
-  useEffect(() => {
-    if (
-      templates &&
-      selectedTemplateId &&
-      !templates.some((template) => template.id === selectedTemplateId)
-    ) {
-      setValue("landing_page_template_id", undefined, {
-        shouldValidate: true,
-      })
-    }
-  }, [templates, selectedTemplateId, setValue])
 
   const onSubmit = (formData: Step8OnlineData) => {
     updateData(formData)
@@ -104,10 +89,10 @@ export function Step8OnlineLanding() {
           </h3>
           <p className="mt-1 max-w-sm text-sm text-gray-500">
             {rewardType === "link"
-              ? "No claim-capable templates exist for this event yet. You can skip this step — employees will get the standard reward claim page."
+              ? `No claim-capable landing-page templates are available${storeData.event_id ? " for this event" : " in this vertical"}. You can skip this step — employees will get the standard reward claim page.`
               : activeTab === "global"
-                ? "No standard templates are available for this event yet."
-                : "You haven't created any custom templates for this event. Try selecting a standard theme instead."}
+                ? `No standard templates are available${storeData.event_id ? " for this event" : " in this vertical"} yet.`
+                : `You haven't created any saved landing-page templates${storeData.event_id ? " for this event" : " in this vertical"}. Try selecting a standard theme instead.`}
           </p>
         </div>
       )
@@ -237,9 +222,10 @@ export function Step8OnlineLanding() {
               Custom Event Detected
             </h3>
             <p className="mt-1 text-sm text-yellow-700">
-              Because you entered a custom event ("{storeData.custom_event_name}
-              "), standard theme matching is disabled. We have loaded the
-              general company templates below.
+              Because this campaign uses a custom event ("
+              {storeData.custom_event_name}"), there is no exact event match.
+              The lists below show compatible templates from the selected
+              vertical, filtered by reward type.
             </p>
           </div>
         ) : null}

@@ -166,35 +166,74 @@ export default function TemplateEditor() {
     }
   }
 
-  const handleSaveSettings = () => {
-    if (!template) return
-    updateMutation.mutate({
-      id: template.id,
-      data: {
-        name: editName,
-        subject: editSubject,
-        thumbnail_path: editThumbnail,
-      },
-    })
-    setIsSettingsOpen(false)
-  }
-
-  const handleSave = () => {
-    if (!editorInstance || !template) return
+  const getEditorContentPayload = () => {
+    if (!editorInstance) return null
 
     const htmlBody = editorInstance.runCommand("gjs-get-inlined-html")
+    if (typeof htmlBody !== "string") {
+      toast.error(
+        "Could not prepare the email content for saving. Please try again."
+      )
+      return null
+    }
+
     const cleanedHtml = htmlBody
       .replace(/<\/?body[^>]*>/g, "")
       .replace(/<\/?html[^>]*>/g, "")
 
-    const designJson = editorInstance.getProjectData()
+    return {
+      html_body: cleanedHtml,
+      design_json: editorInstance.getProjectData(),
+    }
+  }
+
+  const handleSaveSettings = () => {
+    if (!template) return
+
+    const editorContent = getEditorContentPayload()
+    if (!editorContent) {
+      if (!editorInstance) {
+        toast.error(
+          "The template editor is still loading. Please try again in a moment."
+        )
+      }
+      return
+    }
+
+    // Save the editor content and the settings together so a single Save action
+    // persists all current edits to this template.
+    updateMutation.mutate(
+      {
+        id: template.id,
+        data: {
+          ...editorContent,
+          name: editName,
+          subject: editSubject,
+          thumbnail_path: editThumbnail,
+        },
+      },
+      {
+        onSuccess: () => setIsSettingsOpen(false),
+      }
+    )
+  }
+
+  const handleSave = () => {
+    if (!template) return
+
+    const editorContent = getEditorContentPayload()
+    if (!editorContent) {
+      if (!editorInstance) {
+        toast.error(
+          "The template editor is still loading. Please try again in a moment."
+        )
+      }
+      return
+    }
 
     updateMutation.mutate({
       id: template.id,
-      data: {
-        html_body: cleanedHtml,
-        design_json: designJson,
-      },
+      data: editorContent,
     })
   }
 
@@ -232,8 +271,9 @@ export default function TemplateEditor() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={handleOpenSettings} // UPDATED THIS LINE
-            className="rounded-md p-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+            onClick={handleOpenSettings}
+            disabled={updateMutation.isPending}
+            className="rounded-md p-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-50"
             title="Template Settings"
           >
             <Settings className="h-5 w-5" />
@@ -336,15 +376,24 @@ export default function TemplateEditor() {
           <DialogFooter>
             <button
               onClick={() => setIsSettingsOpen(false)}
-              className="rounded-md px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+              disabled={updateMutation.isPending}
+              className="rounded-md px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveSettings}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              disabled={updateMutation.isPending || isUploadingThumb}
+              className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              Save Settings
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving all changes...
+                </>
+              ) : (
+                "Save All Changes"
+              )}
             </button>
           </DialogFooter>
         </DialogContent>

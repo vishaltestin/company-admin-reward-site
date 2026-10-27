@@ -102,24 +102,106 @@ export const step11OnlineSchema = z
 
     send_initial_reminder: z.boolean(),
     reminder_initial_date: z.string().optional(),
+    reminder_initial_template_id: z.number().optional(),
 
     send_expiry_reminder: z.boolean(),
     reminder_expiry_date: z.string().optional(),
+    reminder_expiry_template_id: z.number().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.send_initial_reminder && !data.reminder_initial_date) {
+    const today = new Date()
+    const todayString = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-")
+    const launchDate = data.starts_at.slice(0, 10)
+    const expiryDate = data.expires_at?.slice(0, 10)
+
+    if (data.expires_at && data.expires_at <= data.starts_at) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please set a reminder date.",
-        path: ["reminder_initial_date"],
+        message: "Expiration must be after the launch date.",
+        path: ["expires_at"],
       })
     }
-    if (data.send_expiry_reminder && !data.reminder_expiry_date) {
+
+    if (data.send_initial_reminder) {
+      if (!data.reminder_initial_date) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please set a reminder date.",
+          path: ["reminder_initial_date"],
+        })
+      } else {
+        if (data.reminder_initial_date <= launchDate) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "The follow-up date must be after the launch date.",
+            path: ["reminder_initial_date"],
+          })
+        }
+        if (data.reminder_initial_date <= todayString) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Choose a future date for the follow-up reminder.",
+            path: ["reminder_initial_date"],
+          })
+        }
+        if (expiryDate && data.reminder_initial_date >= expiryDate) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "The follow-up reminder must be before expiration.",
+            path: ["reminder_initial_date"],
+          })
+        }
+      }
+    }
+
+    if (
+      data.send_initial_reminder &&
+      data.send_expiry_reminder &&
+      data.reminder_initial_date &&
+      data.reminder_initial_date === data.reminder_expiry_date
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please set an expiry reminder date.",
+        message: "Choose different dates for the two reminders.",
         path: ["reminder_expiry_date"],
       })
+    }
+
+    if (data.send_expiry_reminder) {
+      if (!data.expires_at) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "Set an expiration date before scheduling an expiry reminder.",
+          path: ["expires_at"],
+        })
+      }
+      if (!data.reminder_expiry_date) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please set an expiry reminder date.",
+          path: ["reminder_expiry_date"],
+        })
+      } else {
+        if (data.reminder_expiry_date <= todayString) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Choose a future date for the expiry reminder.",
+            path: ["reminder_expiry_date"],
+          })
+        }
+        if (expiryDate && data.reminder_expiry_date >= expiryDate) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "The expiry reminder must be before the expiration date.",
+            path: ["reminder_expiry_date"],
+          })
+        }
+      }
     }
   })
 export type Step11OnlineData = z.infer<typeof step11OnlineSchema>

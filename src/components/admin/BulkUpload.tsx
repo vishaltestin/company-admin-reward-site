@@ -59,7 +59,7 @@ export function BulkUpload({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    setUploadErrors([]) 
+    setUploadErrors([])
 
     if (file) {
       if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
@@ -68,6 +68,7 @@ export function BulkUpload({
         if (fileInputRef.current) fileInputRef.current.value = ""
         return
       }
+
       setSelectedFile(file)
     }
   }
@@ -78,15 +79,12 @@ export function BulkUpload({
       formData.append("file", file)
       formData.append("vertical_slug", verticalSlug)
 
-      const { data } = await api.post(
-        "/employees/bulk-upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      )
+      const { data } = await api.post("/employees/bulk-upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+
       return data
     },
     onSuccess: (data) => {
@@ -95,6 +93,7 @@ export function BulkUpload({
     },
     onError: (error: AxiosError) => {
       const responseData = error.response?.data as ApiErrorResponse
+
       if (responseData?.errors && Array.isArray(responseData.errors)) {
         setUploadErrors(responseData.errors)
       } else {
@@ -108,6 +107,7 @@ export function BulkUpload({
       toast.error("Please select a file first")
       return
     }
+
     uploadMutation.mutate(selectedFile)
   }
 
@@ -121,7 +121,8 @@ export function BulkUpload({
           </h3>
           <p className="mx-auto max-w-sm text-sm text-gray-500">
             Download the template, fill in your recipient data, and upload the
-            CSV file here. Max 5MB.
+            CSV file here. Max 5MB. Enter dates as YYYY-MM-DD or DD/MM/YYYY;
+            Excel date serials are also accepted.
           </p>
         </div>
 
@@ -182,8 +183,8 @@ export function BulkUpload({
               again:
             </p>
             <ul className="list-disc space-y-1 rounded border border-red-100 bg-white p-3 pl-5 font-mono text-xs text-red-600">
-              {uploadErrors.map((err, index) => (
-                <li key={index}>{err}</li>
+              {uploadErrors.map((error, index) => (
+                <li key={index}>{error}</li>
               ))}
             </ul>
           </AlertDescription>

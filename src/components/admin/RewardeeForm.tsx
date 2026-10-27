@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react"
 
 import { type User } from "@/store/useAuthStore"
 import { VERTICAL_FIELDS } from "@/config/verticalFields"
+import { DatePickerField } from "@/components/admin/DatePickerField"
 import { api, getApiErrorMessage } from "@/lib/axios"
 
 import { Button } from "@/components/ui/button"
@@ -29,12 +30,14 @@ const formSchema = z.object({
 })
 
 type FormValues = z.infer<typeof formSchema>
+
 type RewardeeUser = User & {
   custom_data?: Record<string, unknown>
   rewardee_profile?: {
     vertical_data?: Record<string, unknown>
   }
 }
+
 interface RewardeeFormProps {
   verticalSlug: string
   initialData?: RewardeeUser | null
@@ -166,14 +169,30 @@ export function RewardeeForm({
               <div key={config.name} className="space-y-2">
                 <Label htmlFor={`dynamic_${config.name}`}>{config.label}</Label>
 
-                {/* TEXT & DATE INPUTS */}
-                {(config.type === "text" || config.type === "date") && (
+                {config.type === "text" && (
                   <Input
                     id={`dynamic_${config.name}`}
-                    type={config.type}
+                    type="text"
                     placeholder={config.placeholder}
                     {...register(
                       `custom_data.${config.name}` as Path<FormValues>
+                    )}
+                  />
+                )}
+
+                {config.type === "date" && (
+                  <Controller
+                    control={control}
+                    name={`custom_data.${config.name}` as Path<FormValues>}
+                    render={({ field }) => (
+                      <DatePickerField
+                        id={`dynamic_${config.name}`}
+                        value={
+                          typeof field.value === "string" ? field.value : ""
+                        }
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                      />
                     )}
                   />
                 )}

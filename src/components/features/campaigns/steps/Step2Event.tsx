@@ -93,7 +93,17 @@ export function Step2Event() {
   }
 
   const onSubmit = (formData: Step2Data) => {
-    updateData(formData)
+    const eventChanged = storeData.event_id !== formData.event_id
+
+    updateData({
+      ...formData,
+      ...(eventChanged && {
+        landing_page_template_id: undefined,
+        email_template_id: undefined,
+        reminder_initial_template_id: undefined,
+        reminder_expiry_template_id: undefined,
+      }),
+    })
     nextStep()
   }
 

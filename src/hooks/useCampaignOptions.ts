@@ -34,58 +34,90 @@ export const useCampaignEvents = (verticalId?: number) => {
   })
 }
 
+export type CampaignRewardType = "points" | "code" | "link"
+export type CampaignTemplateTab = "global" | "variations"
+
 export interface CampaignTemplate {
   id: number
   name: string
-  title: string
-  status: string
+  title?: string
+  subject?: string
+  status?: string
+  reward_type?: CampaignRewardType | null
   thumbnail_path?: string
   updated_at: string
 }
 
+function getTemplateScopeParams(
+  eventId: number | null | undefined,
+  verticalId: number | null | undefined,
+  tab: CampaignTemplateTab,
+  rewardType?: CampaignRewardType | null
+) {
+  return {
+    tab,
+    ...(eventId != null ? { event_id: eventId } : {}),
+    ...(eventId == null && verticalId != null
+      ? { vertical_id: verticalId }
+      : {}),
+    ...(rewardType ? { reward_type: rewardType } : {}),
+  }
+}
+
 export const useCampaignLandingPages = (
   eventId?: number | null,
-  tab: "global" | "variations" = "global",
-  // Accepts the campaign store's FULL reward_type union. "physical_bulk"
-  // (wholesale campaigns) has no online claim page, and the API only filters
-  // for "link" (its validator rejects any value outside points/code/link),
-  // so the param is forwarded only for link campaigns.
-  rewardType?: "points" | "code" | "link" | "physical_bulk" | null
+  verticalId?: number | null,
+  tab: CampaignTemplateTab = "global",
+  rewardType?: CampaignRewardType | null
 ) => {
+  const isEnabled = eventId != null || verticalId != null
+
   return useQuery({
-    queryKey: ["campaign-landing-pages", eventId, tab, rewardType ?? null],
+    queryKey: [
+      "campaign-landing-pages",
+      eventId ?? null,
+      verticalId ?? null,
+      tab,
+      rewardType ?? null,
+    ],
     queryFn: async () => {
       const { data } = await api.get<{ data: CampaignTemplate[] }>(
-        `/landing-pages`,
+        "/landing-pages",
         {
-          params: {
-            event_id: eventId,
-            tab,
-            ...(rewardType === "link" ? { reward_type: "link" } : {}),
-          },
+          params: getTemplateScopeParams(eventId, verticalId, tab, rewardType),
         }
       )
       return data.data
     },
-    enabled: !!eventId,
+    enabled: isEnabled,
   })
 }
 
 export const useCampaignEmailTemplates = (
   eventId?: number | null,
-  tab: "global" | "variations" = "global"
+  verticalId?: number | null,
+  tab: CampaignTemplateTab = "global",
+  rewardType?: CampaignRewardType | null
 ) => {
+  const isEnabled = eventId != null || verticalId != null
+
   return useQuery({
-    queryKey: ["campaign-email-templates", eventId, tab],
+    queryKey: [
+      "campaign-email-templates",
+      eventId ?? null,
+      verticalId ?? null,
+      tab,
+      rewardType ?? null,
+    ],
     queryFn: async () => {
       const { data } = await api.get<{ data: CampaignTemplate[] }>(
-        `/email-templates`,
+        "/email-templates",
         {
-          params: { event_id: eventId, tab },
+          params: getTemplateScopeParams(eventId, verticalId, tab, rewardType),
         }
       )
       return data.data
     },
-    enabled: !!eventId,
+    enabled: isEnabled,
   })
 }

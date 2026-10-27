@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   ShoppingCart,
-  Building2,
   ChevronRight,
   BarChart2,
   DollarSign,
@@ -24,6 +23,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 import {
@@ -32,7 +32,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 
-import { useSidebar } from "@/components/ui/sidebar"
 import { NavUser } from "@/components/auth/NavUser"
 
 interface NavSubItem {
@@ -123,23 +122,23 @@ export function AppSidebar() {
 
   if (!user) return null
 
+  const logoSrc = open
+    ? user.company?.logo_url || "/images/logo-vertical.png"
+    : "/images/logo-icon.png"
+
   return (
     <Sidebar collapsible="icon" variant="inset" className="font-grotest">
       <SidebarHeader className="border-b-2 py-3 pb-2">
-        <div className="flex items-center justify-center gap-2 px-2">
-          {open ? (
-            <div className="flex items-center gap-3">
-              <img
-                src={user.company?.logo_url || ""}
-                alt="Company Logo"
-                className="max-h-12 max-w-full object-contain"
-              />
-            </div>
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg">
-              <Building2 className="h-6 w-6" />
-            </div>
-          )}
+        <div className="flex min-h-12 items-center justify-center px-2">
+          <img
+            src={logoSrc}
+            alt={user.company?.name || "RewardsApp"}
+            className={
+              open
+                ? "max-h-12 max-w-full object-contain"
+                : "h-10 w-10 object-contain"
+            }
+          />
         </div>
       </SidebarHeader>
 
@@ -181,7 +180,7 @@ export function AppSidebar() {
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton
                           tooltip={item.title}
-                          className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10 font-medium uppercase" 
+                          className="my-1 rounded-lg font-medium uppercase transition-all duration-200 hover:bg-primary/10"
                         >
                           <div className="relative">
                             <div className="absolute top-1/2 -left-2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-opacity group-data-[state=open]/collapsible:opacity-100" />
@@ -215,7 +214,7 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive}
                     tooltip={item.title}
-                    className="my-1 rounded-lg transition-all duration-200 hover:bg-primary/10 font-medium uppercase"
+                    className="my-1 rounded-lg font-medium uppercase transition-all duration-200 hover:bg-primary/10"
                   >
                     <Link to={item.url}>
                       <item.icon className="h-5 w-5 text-primary" />

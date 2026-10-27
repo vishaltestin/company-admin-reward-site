@@ -8,7 +8,7 @@ export interface ReportFilters {
 export interface ReportOverview {
   total_sent: number
   total_redeemed: number
-  redemption_rate: number
+  redemption_rate: number | null
   total_campaigns: number
 }
 
@@ -30,24 +30,38 @@ export interface TopRecipient {
   type: string
   points_balance: number
   redemptions: number
+  orders: number
   tier: string
 }
 
+export interface TopRecipientsSummary {
+  total_recipients: number
+  total_points_balance: number
+  total_orders: number
+}
+
+export interface TopRecipientsReport {
+  recipients: TopRecipient[]
+  summary: TopRecipientsSummary
+}
+
 export interface CampaignReportItem {
-  id: number
+  id: string
   name: string
   startDate: string
   endDate: string
   sent: number
-  redeemed: number
-  status: "Active" | "Completed" | "Draft" | "Archived"
+  redeemed: number | null
+  redemption_rate: number | null
+  attribution_available?: boolean
+  status: string
 }
 
 export interface RecentActivityItem {
-  id: number
+  id: string
   user: string
   type: "Sent" | "Redeemed"
-  value: number
+  value: string | number
   reason: string
   date: string
 }
