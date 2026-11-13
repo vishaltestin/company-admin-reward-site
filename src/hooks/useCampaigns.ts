@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  keepPreviousData,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { api } from "@/lib/axios"
 import { toast } from "sonner"
 import { AxiosError } from "axios"
@@ -9,6 +14,10 @@ export interface CampaignListFilters {
   verticalId?: number
   month?: number
   year?: number
+  /** Server-side search across campaign name + custom event name. */
+  search?: string
+  /** Server-side status filter. */
+  status?: string
 }
 
 export interface CampaignListEventOption {
@@ -53,10 +62,17 @@ export const useCampaignsQuery = (
           vertical_id: filters.verticalId,
           month: filters.month,
           year: filters.year,
+          search: filters.search || undefined,
+          status: filters.status || undefined,
         },
       })
       return data
     },
+    // Keep the previous page on screen while a filter change is in flight.
+    // Without this every filter click unmounted the table (and the open filter
+    // dropdown's data), which read as the page "freezing".
+    placeholderData: keepPreviousData,
+    staleTime: 15_000,
   })
 }
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   type ColumnDef,
@@ -7,7 +7,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
@@ -111,7 +110,20 @@ export default function CampaignsList() {
   const [eventFilter, setEventFilter] = useState("all")
   const [monthFilter, setMonthFilter] = useState("all")
   const [yearFilter, setYearFilter] = useState("all")
+  // Search + status are resolved by the API, not by TanStack's client-side row
+  // model — otherwise you only ever filter the 15 rows of the current page.
+  const [searchInput, setSearchInput] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput.trim())
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
 
   const campaignFilters = useMemo<CampaignListFilters>(() => {
     const filters: CampaignListFilters = {}
@@ -139,9 +151,11 @@ export default function CampaignsList() {
 
     if (monthFilter !== "all") filters.month = Number(monthFilter)
     if (yearFilter !== "all") filters.year = Number(yearFilter)
+    if (searchTerm !== "") filters.search = searchTerm
+    if (statusFilter !== "all") filters.status = statusFilter
 
     return filters
-  }, [eventFilter, monthFilter, yearFilter])
+  }, [eventFilter, monthFilter, yearFilter, searchTerm, statusFilter])
 
   // Table State
   const [sorting, setSorting] = useState<SortingState>([])
@@ -323,7 +337,10 @@ export default function CampaignsList() {
     data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // Deliberately NO getPaginationRowModel: the API already paginates (15 per
+    // page). Having both layers meant TanStack sliced that server page down to
+    // its own default of 10 rows, so rows 11-15 were invisible and sorting /
+    // filtering silently operated on a truncated list.
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
@@ -416,25 +433,18 @@ export default function CampaignsList() {
               <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search campaigns..."
-                value={
-                  (table.getColumn("name")?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) =>
-                  table.getColumn("name")?.setFilterValue(event.target.value)
-                }
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
                 className="w-full bg-white pl-9 text-sm focus-visible:ring-black"
               />
             </div>
 
             <Select
-              value={
-                (table.getColumn("status")?.getFilterValue() as string) ?? "all"
-              }
-              onValueChange={(val) =>
-                table
-                  .getColumn("status")
-                  ?.setFilterValue(val === "all" ? "" : val)
-              }
+              value={statusFilter}
+              onValueChange={(value) => {
+                setPage(1)
+                setStatusFilter(value)
+              }}
             >
               <SelectTrigger className="w-[150px] bg-white focus:ring-black">
                 <SelectValue placeholder="Status" />
@@ -515,7 +525,9 @@ export default function CampaignsList() {
 
             {(eventFilter !== "all" ||
               monthFilter !== "all" ||
-              yearFilter !== "all") && (
+              yearFilter !== "all" ||
+              statusFilter !== "all" ||
+              searchInput !== "") && (
               <Button
                 type="button"
                 variant="ghost"
@@ -525,6 +537,9 @@ export default function CampaignsList() {
                   setEventFilter("all")
                   setMonthFilter("all")
                   setYearFilter("all")
+                  setStatusFilter("all")
+                  setSearchInput("")
+                  setSearchTerm("")
                 }}
                 className="text-gray-500"
               >

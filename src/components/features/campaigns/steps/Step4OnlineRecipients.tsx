@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -27,11 +27,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 import { useCampaignStore } from "@/store/useCampaignStore"
 import { step4OnlineSchema, type Step4OnlineData } from "../schemas"
 import { useCampaignVerticals } from "@/hooks/useCampaignOptions"
-import { useEmployeesQuery } from "@/hooks/useEmployees"
+import {
+  useEmployeeFilterOptions,
+  useEmployeesQuery,
+  type EmployeeSegmentFilters,
+} from "@/hooks/useEmployees"
 
 import { RewardeeForm } from "@/components/admin/RewardeeForm"
 import { BulkUpload } from "@/components/admin/BulkUpload"
@@ -48,6 +59,31 @@ export function Step4OnlineRecipients() {
   const [page, setPage] = useState(1)
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  // Segmentation for the recipient picker: Department / Job Seniority /
+  // Workforce Type / Job Mode / Location. Values come from the recipients
+  // already uploaded for this company + vertical.
+  const [segment, setSegment] = useState<EmployeeSegmentFilters>({})
+  const { data: filterOptions, isLoading: isLoadingFilterOptions } =
+    useEmployeeFilterOptions(currentVertical?.slug || "")
+
+  const setSegmentValue = (key: keyof EmployeeSegmentFilters, value: string) => {
+    setPage(1)
+    setSegment((current) => {
+      const next = { ...current }
+      if (value === "all") {
+        delete next[key]
+      } else {
+        next[key] = value
+      }
+      return next
+    })
+  }
+
+  const activeSegmentCount = useMemo(
+    () => Object.keys(segment).length,
+    [segment]
+  )
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -69,6 +105,7 @@ export function Step4OnlineRecipients() {
     page,
     search: debouncedSearch,
     activeOnly: true,
+    segment,
   })
 
   const {
@@ -170,6 +207,64 @@ export function Step4OnlineRecipients() {
           </div>
         </div>
 
+        {/* Recipient segmentation */}
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-gray-50/60 p-3">
+          <span className="mr-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            Filter by
+          </span>
+
+          <FilterSelect
+            label="Department"
+            value={segment.department}
+            options={filterOptions?.department}
+            isLoading={isLoadingFilterOptions}
+            onChange={(value) => setSegmentValue("department", value)}
+          />
+          <FilterSelect
+            label="Job Seniority"
+            value={segment.job_seniority}
+            options={filterOptions?.job_seniorities}
+            isLoading={isLoadingFilterOptions}
+            onChange={(value) => setSegmentValue("job_seniority", value)}
+          />
+          <FilterSelect
+            label="Workforce Type"
+            value={segment.workforce_type}
+            options={filterOptions?.workforce_type}
+            isLoading={isLoadingFilterOptions}
+            onChange={(value) => setSegmentValue("workforce_type", value)}
+          />
+          <FilterSelect
+            label="Job Mode"
+            value={segment.job_mode}
+            options={filterOptions?.job_mode}
+            isLoading={isLoadingFilterOptions}
+            onChange={(value) => setSegmentValue("job_mode", value)}
+          />
+          <FilterSelect
+            label="Location"
+            value={segment.location}
+            options={filterOptions?.location}
+            isLoading={isLoadingFilterOptions}
+            onChange={(value) => setSegmentValue("location", value)}
+          />
+
+          {activeSegmentCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-gray-500"
+              onClick={() => {
+                setPage(1)
+                setSegment({})
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
+
         <div className="overflow-hidden rounded-md border bg-white shadow-sm">
           <Table>
             <TableHeader className="bg-gray-50/50">
@@ -199,7 +294,7 @@ export function Step4OnlineRecipients() {
                     colSpan={4}
                     className="py-10 text-center text-gray-500"
                   >
-                    No recipients found in this vertical.
+                    No recipients match the current search or filters.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -305,5 +400,46 @@ export function Step4OnlineRecipients() {
         </>
       )}
     </form>
+  )
+}
+
+interface FilterSelectProps {
+  label: string
+  value?: string
+  options?: string[]
+  isLoading?: boolean
+  onChange: (value: string) => void
+}
+
+/**
+ * Small dropdown used for the recipient segmentation row. Shows the values that
+ * actually exist in the uploaded data, so the list is never empty-but-useless.
+ */
+function FilterSelect({
+  label,
+  value,
+  options,
+  isLoading,
+  onChange,
+}: FilterSelectProps) {
+  const hasOptions = !!options && options.length > 0
+
+  return (
+    <Select value={value ?? "all"} onValueChange={onChange}>
+      <SelectTrigger
+        className="h-9 w-[170px] bg-white text-xs"
+        disabled={!hasOptions && !isLoading}
+      >
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All {label}</SelectItem>
+        {(options ?? []).map((option) => (
+          <SelectItem key={option} value={option}>
+            {option}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }

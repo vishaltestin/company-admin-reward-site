@@ -16,11 +16,22 @@ interface PaginatedResponse<T> {
 
 import { type User } from "@/store/useAuthStore"
 
+export interface EmployeeSegmentFilters {
+  department?: string
+  job_seniority?: string
+  workforce_type?: string
+  job_mode?: string
+  location?: string
+  job_title?: string
+}
+
 interface UseEmployeesParams {
   vertical: string
   page: number
   search: string
   activeOnly?: boolean
+  /** Department / seniority / workforce type / job mode / location filters. */
+  segment?: EmployeeSegmentFilters
 }
 
 export const useEmployeesQuery = ({
@@ -28,9 +39,10 @@ export const useEmployeesQuery = ({
   page,
   search,
   activeOnly = false,
+  segment = {},
 }: UseEmployeesParams) => {
   return useQuery({
-    queryKey: ["employees", vertical, page, search, activeOnly],
+    queryKey: ["employees", vertical, page, search, activeOnly, segment],
     queryFn: async () => {
       const { data } = await api.get<PaginatedResponse<User>>("/employees", {
         params: {
@@ -38,11 +50,45 @@ export const useEmployeesQuery = ({
           page,
           search: search || undefined,
           active_only: activeOnly ? 1 : undefined,
+          department: segment.department || undefined,
+          job_seniority: segment.job_seniority || undefined,
+          workforce_type: segment.workforce_type || undefined,
+          job_mode: segment.job_mode || undefined,
+          location: segment.location || undefined,
+          job_title: segment.job_title || undefined,
         },
       })
       return data
     },
     placeholderData: (previousData) => previousData,
+  })
+}
+
+export interface EmployeeFilterOptions {
+  department: string[]
+  job_seniorities: string[]
+  workforce_type: string[]
+  job_mode: string[]
+  location: string[]
+  job_title: string[]
+}
+
+/**
+ * Values actually present in this company's recipient data, used to populate
+ * the segmentation dropdowns (a dropdown of values nobody has is useless).
+ */
+export const useEmployeeFilterOptions = (vertical: string) => {
+  return useQuery({
+    queryKey: ["employee-filter-options", vertical],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: EmployeeFilterOptions }>(
+        "/employees/filter-options",
+        { params: { vertical } }
+      )
+      return data.data
+    },
+    enabled: !!vertical,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
